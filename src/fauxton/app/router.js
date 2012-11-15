@@ -60,7 +60,7 @@ function(app, Initialize, Fauxton, Dashboard, Databases, API, Plugin, Log, Confi
       }));
 
       dashboard.setSidebarContent(new Databases.Views.Sidebar({
-        collection: databases
+        collection: database
       }));
 
       dashboard.setBreadcrumbs(new Fauxton.Breadcrumbs({
@@ -93,7 +93,7 @@ function(app, Initialize, Fauxton, Dashboard, Databases, API, Plugin, Log, Confi
       }));
 
       dashboard.setSidebarContent(new Databases.Views.Sidebar({
-        collection: databases
+        collection: database
       }));
 
       dashboard.setBreadcrumbs(new Fauxton.Breadcrumbs({
@@ -121,10 +121,6 @@ function(app, Initialize, Fauxton, Dashboard, Databases, API, Plugin, Log, Confi
 
       dashboard.setDashboardContent(new Log.View({
         collection: logs
-      }));
-
-      dashboard.setSidebarContent(new Databases.Views.Sidebar({
-        collection: databases
       }));
 
       dashboard.setBreadcrumbs(new Fauxton.Breadcrumbs({
