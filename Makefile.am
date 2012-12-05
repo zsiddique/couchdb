@@ -122,6 +122,7 @@ if TESTS
 	mkdir -p $(top_builddir)/tmp/lib
 	mkdir -p $(top_builddir)/tmp/log
 	mkdir -p $(top_builddir)/tmp/run/couchdb
+	ln -s $(abs_top_builddir)/share/doc/build/html $(abs_top_builddir)/share/www/docs
 endif
 
 install-data-hook:
@@ -134,6 +135,7 @@ distclean-local:
 	rm -fr $(top_builddir)/tmp
 	rm -f  $(top_builddir)/couchdb.stdout
 	rm -f  $(top_builddir)/couchdb.stderr
+	rm -f  $(abs_top_builddir)/share/www/docs
 
 .PHONY: local-clean
 local-clean: maintainer-clean
