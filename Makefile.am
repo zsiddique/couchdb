@@ -122,9 +122,13 @@ if TESTS
 	mkdir -p $(top_builddir)/tmp/lib
 	mkdir -p $(top_builddir)/tmp/log
 	mkdir -p $(top_builddir)/tmp/run/couchdb
-	ln -s $(abs_top_builddir)/share/doc/build/html $(abs_top_builddir)/share/www/docs
+	if test ! -e $(top_builddir)/share/www/docs; then \
+	    ln -s \
+	        $(top_builddir)/share/doc/build/html \
+	        $(top_builddir)/share/www/docs; \
+	fi
 endif
-
+ 
 install-data-hook:
 	@echo
 	@echo "You have installed Apache CouchDB, time to relax."
