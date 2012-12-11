@@ -122,7 +122,7 @@ if TESTS
 	mkdir -p $(top_builddir)/tmp/lib
 	mkdir -p $(top_builddir)/tmp/log
 	mkdir -p $(top_builddir)/tmp/run/couchdb
-	if test ! -e $(top_builddir)/share/www/docs; then \
+	if test ! -L $(top_builddir)/share/www/docs; then \
 	    ln -s \
 	        $(top_builddir)/share/doc/build/html \
 	        $(top_builddir)/share/www/docs; \
