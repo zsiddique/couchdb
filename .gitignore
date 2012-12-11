@@ -58,6 +58,7 @@ share/doc/build/latex
 share/doc/build/texinfo
 share/server/main-coffee.js
 share/server/main.js
+share/www/docs
 src/couch_mrview/ebin/
 src/couch_replicator/ebin/
 src/couchdb/.deps/*
