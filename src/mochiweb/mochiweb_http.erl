@@ -102,7 +102,13 @@ loop(Socket, Body) ->
 request(Socket, Body) ->
     mochiweb_socket:setopts(Socket, [{active, once}]),
     receive
-        {Protocol, _, {http_request, Method, Path, Version}} when Protocol == http orelse Protocol == ssl ->
+        {Protocol, _, {http_request, Method, {abs_path, _}=Path, Version}} when Protocol == http orelse Protocol == ssl ->
+            mochiweb_socket:setopts(Socket, [{packet, httph}]),
+            headers(Socket, {Method, Path, Version}, [], Body, 0);
+        {Protocol, _, {http_request, Method, {absoluteURI, _, _, _, _}=Path, Version}} when Protocol == http orelse Protocol == ssl ->
+            mochiweb_socket:setopts(Socket, [{packet, httph}]),
+            headers(Socket, {Method, Path, Version}, [], Body, 0);
+        {Protocol, _, {http_request, Method, '*'=Path, Version}} when Protocol == http orelse Protocol == ssl ->
             mochiweb_socket:setopts(Socket, [{packet, httph}]),
             headers(Socket, {Method, Path, Version}, [], Body, 0);
         {Protocol, _, {http_error, "\r\n"}} when Protocol == http orelse Protocol == ssl ->
