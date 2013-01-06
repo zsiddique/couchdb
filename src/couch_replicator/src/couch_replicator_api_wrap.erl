@@ -20,6 +20,7 @@
 
 -include("couch_db.hrl").
 -include("couch_replicator_api_wrap.hrl").
+-include("../ibrowse/ibrowse.hrl").
 
 -export([
     db_open/2,
@@ -70,9 +71,22 @@ db_open(#httpdb{} = Db1, _Options, Create) ->
     true ->
         send_req(Db, [{method, put}], fun(_, _, _) -> ok end)
     end,
-    send_req(Db, [{method, head}],
-        fun(200, _, _) ->
-            {ok, Db};
+    login(Db,
+        fun(200, Headers, _) ->
+            CookieHeader = get_value("Set-Cookie", Headers),
+            Cookie = mochiweb_cookies:parse_cookie(CookieHeader),
+            AuthSession = proplists:get_value("AuthSession", Cookie),
+            NewHeaders = [{"Cookie", AuthSession}|Db#httpdb.headers],
+            #url{
+               protocol = Protocol,
+               host = Host,
+               port = Port,
+               path = Path
+            } = ibrowse_lib:parse_url(Db#httpdb.url),
+            NewUrl = lists:flatten(
+                       [atom_to_list(Protocol), "://", Host,
+                        ":", integer_to_list(Port), Path]),
+            {ok, Db#httpdb{url=NewUrl, headers=NewHeaders}};
         (401, _, _) ->
             throw({unauthorized, ?l2b(db_uri(Db))});
         (_, _, _) ->
@@ -776,3 +790,22 @@ stream_doc({LenLeft, Id}) when LenLeft > 0 ->
     receive {data, Ref, Data} ->
         {ok, Data, {LenLeft - iolist_size(Data), Id}}
     end.
+
+login(#httpdb{url=Url} = Db, Callback) ->
+    #url{
+       protocol = Protocol,
+       host = Host,
+       port = Port,
+       username = User,
+       password = Password
+    } = ibrowse_lib:parse_url(Url),
+    Url1 = lists:flatten([atom_to_list(Protocol), "://", Host, ":",
+                          integer_to_list(Port), "/_session"]),
+    Body = lists:flatten(["name=", User, "&password=", Password]),
+    send_req(Db#httpdb{url=Url1},
+        [
+            {method, post},
+            {headers, [{"Content-Type",
+                        "application/x-www-form-urlencoded"}]},
+            {body, Body}
+        ], Callback).
