@@ -17,8 +17,6 @@ couchprivdir = $(couchlibdir)/priv
 couchprivlibdir = $(couchlibdir)/priv/lib
 man1dir = $(mandir)/man1
 
-man_file = couchjs.1
-
 if BUILD_MAN
 man_file_build = $(man_file)
 else
@@ -31,9 +29,6 @@ EXTRA_DIST = \
 	spawnkillable/couchspawnkillable.sh \
 	stat_descriptions.cfg.in \
 	couch_ejson_compare/erl_nif_compat.h \
-	couch_js/sm170.c \
-	couch_js/sm180.c \
-	couch_js/sm185.c \
 	$(man_file_build)
 
 CLEANFILES = $(man_file_build) stat_descriptions.cfg
@@ -58,35 +53,10 @@ if WINDOWS
 couch_icu_driver_la_LDFLAGS += -no-undefined
 endif
 
-COUCHJS_SRCS = \
-	couch_js/help.h \
-	couch_js/http.c \
-	couch_js/http.h \
-	couch_js/main.c \
-	couch_js/utf8.c \
-	couch_js/utf8.h \
-	couch_js/util.h \
-	couch_js/util.c
-
-locallibbin_PROGRAMS = couchjs
-couchjs_SOURCES = $(COUCHJS_SRCS)
-couchjs_CFLAGS = -g -Wall -Werror -D_BSD_SOURCE $(CURL_CFLAGS) $(JS_CFLAGS)
-couchjs_LDADD = $(CURL_LIBS) $(JS_LIBS)
-
 couchpriv_DATA = stat_descriptions.cfg
 couchpriv_PROGRAMS = couchspawnkillable
 
 # Depend on source files so distributed man pages are not rebuilt for end user.
-
-$(man_file): $(COUCHJS_SRCS)
-	$(MAKE_SAFE) -f Makefile couchjs; \
-	$(top_srcdir)/build-aux/missing --run \
-	    help2man \
-	        --no-info \
-	        --help-option="-h" \
-	        --version-option="-V" \
-	        --name="$(package_name) JavaScript interpreter" \
-	        ./couchjs --output $@
 
 install-data-local:
 	if test -s $(man_file); then \
@@ -130,7 +100,6 @@ if WINDOWS
 	$(INSTALL) $(ICU_BIN)/icuuc*.dll $(bindir)
 	$(INSTALL) $(ICU_BIN)/icudt*.dll $(bindir)
 	$(INSTALL) $(ICU_BIN)/icuin*.dll $(bindir)
-	$(INSTALL) $(JS_LIB_BINARY) $(bindir)
 	$(INSTALL) .libs/couchspawnkillable.exe \
 		"$(DESTDIR)$(couchprivdir)/couchspawnkillable.exe"
 endif

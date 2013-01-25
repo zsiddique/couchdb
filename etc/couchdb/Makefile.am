@@ -21,8 +21,6 @@ EXTRA_DIST = local.ini
 CLEANFILES = $(localconf_DATA) $(noinst_DATA)
 
 transform = @program_transform_name@
-couchjs_command_name = `echo couchjs | sed '$(transform)'`
-couchjs_dev_command_name = `echo couchjs_dev | sed '$(transform)'`
 
 if WINDOWS
 default.ini: default.ini.tpl
@@ -34,7 +32,6 @@ default.ini: default.ini.tpl
 	    -e "s|%localstatelogdir%|../var/log/couchdb|g" \
 	    -e "s|%localstaterundir%|../var/run/couchdb|g" \
 	    -e "s|%couchprivlibdir%|../lib/couch-$(version)/priv/lib|g" \
-	    -e "s|%couchjs_command_name%|couchjs.exe|g" \
 	    -e "s|%package_author_name%|$(package_author_name)|g" \
 	    -e "s|%version%|$(version)|g" \
 	< $< > $@
@@ -48,7 +45,6 @@ default.ini: default.ini.tpl
 	    -e "s|%localstatelogdir%|$(localstatelogdir)|g" \
 	    -e "s|%localstaterundir%|$(localstaterundir)|g" \
 	    -e "s|%couchprivlibdir%|$(couchprivlibdir)|g" \
-	    -e "s|%couchjs_command_name%|$(couchjs_command_name)|g" \
 	    -e "s|%package_author_name%|$(package_author_name)|g" \
 	    -e "s|%version%|$(version)|g" \
 	< $< > $@
@@ -63,7 +59,6 @@ default_dev.ini: default.ini.tpl
 	    -e "s|%localstatelogdir%|$(abs_top_builddir)/tmp/log|g" \
 	    -e "s|%localstaterundir%|$(abs_top_builddir)/tmp/run|g" \
 	    -e "s|%couchprivlibdir%|$(devcouchprivlibdir)|g" \
-	    -e "s|%couchjs_command_name%|$(couchjs_dev_command_name)|g" \
 	    -e "s|%package_author_name%|$(package_author_name)|g" \
 	    -e "s|%version%|$(version)|g" \
 	< $< > $@

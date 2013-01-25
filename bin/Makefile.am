@@ -20,7 +20,7 @@ endif
 
 man1dir = $(mandir)/man1
 
-noinst_SCRIPTS = couchjs_dev couch-config_dev
+noinst_SCRIPTS = couch-config_dev
 
 man_file = couchdb.1
 
@@ -38,7 +38,6 @@ CLEANFILES = $(bin_SCRIPTS) $(man_file_build) $(noinst_SCRIPTS)
 
 transform = @program_transform_name@
 couchdb_command_name = `echo couchdb | sed '$(transform)'`
-couchjs_command_name = `echo couchjs | sed '$(transform)'`
 
 couchdb: couchdb.tpl
 	sed -e "s|%ERL%|$(ERL)|g" \
@@ -62,12 +61,7 @@ couchdb: couchdb.tpl
 
 if !WINDOWS
 install-exec-hook:
-	$(LN_S) -f "$(locallibbindir)/$(couchjs_command_name)" \
-		"$(DESTDIR)$(bindir)/$(couchjs_command_name)"
 endif
-
-couchjs_dev:
-	$(LN_S) -f "$(abs_top_builddir)/src/couchdb/priv/couchjs" "$@"
 
 couchdb.bat: couchdb.bat.tpl
 	sed -e "s|%ICU_CONFIG%|$(ICU_CONFIG)|g" \

@@ -150,56 +150,13 @@ AC_ARG_WITH([erlang],
 
 AC_SUBST(ERLANG_FLAGS)
 
-PKG_CHECK_MODULES([JS], [mozjs185], [
-    JS_LIB_DIR="$(${PKG_CONFIG} --variable=libdir mozjs185)"
-], [
-    PKG_CHECK_MODULES([JS], [mozilla-js >= 1.7], [
-        JS_LIB_DIR="$(${PKG_CONFIG} --variable=sdkdir mozilla-js)/lib"
-    ], [
-        JS_LIB_DIR="${libdir}"
-        JS_CFLAGS="-I/usr/include"
-        JS_CFLAGS="$JS_CFLAGS -I/usr/include/js"
-        JS_CFLAGS="$JS_CFLAGS -I/usr/include/mozjs"
-        JS_CFLAGS="$JS_CFLAGS -I/usr/local/include/js"
-        JS_CFLAGS="$JS_CFLAGS -I/opt/local/include/js"
-    ])
-])
-
-AC_ARG_WITH([js-include],
-    [AS_HELP_STRING([--with-js-include=PATH],
-        [set PATH to the SpiderMonkey include directory])
-], [
-    JS_INCLUDE="$withval"
-    JS_CFLAGS="-I$JS_INCLUDE"
-], [])
-
-AC_ARG_WITH([js-lib],
-    [AS_HELP_STRING([--with-js-lib=PATH],
-        [set PATH to the SpiderMonkey library directory])
-], [
-    JS_LIB_DIR=$withval
-    JS_LIBS="-L$withval"
-], [])
-
-use_js_trunk=no
-
-AC_ARG_ENABLE([js-trunk],
-    [AS_HELP_STRING([--enable-js-trunk],
-        [allow use of SpiderMonkey versions newer than js185-1.0.0])
-], [
-    use_js_trunk=$enableval
-], [])
-
 AC_ARG_VAR([ERLC_FLAGS], [general flags to prepend to ERLC_FLAGS])
 AC_ARG_VAR([FLAGS], [general flags to prepend to LDFLAGS and CPPFLAGS])
 
 AS_CASE([$(uname -s)], [CYGWIN*], [] , [*], [
     CPPFLAGS="$CPPFLAGS -I/opt/local/include"
-    CPPFLAGS="$CPPFLAGS -I/opt/local/include/js"
     CPPFLAGS="$CPPFLAGS -I/usr/local/include"
-    CPPFLAGS="$CPPFLAGS -I/usr/local/include/js"
     CPPFLAGS="$CPPFLAGS -I/usr/include"
-    CPPFLAGS="$CPPFLAGS -I/usr/include/js"
     LDFLAGS="$LDFLAGS -L/opt/local/lib"
     LDFLAGS="$LDFLAGS -L/usr/local/lib"
 ])
@@ -214,104 +171,17 @@ CFLAGS="-O2 $CFLAGS"
 LIBS="$LIBS $LDFLAGS"
 
 AS_CASE([$(uname -s)], [CYGWIN*], [
-    JS_CFLAGS="-DXP_WIN $JS_CFLAGS"
     IS_WINDOWS="TRUE"
 ], [*], [
-    # XP_UNIX required for jsapi.h, tested on Linux and Darwin.
-    JS_CFLAGS="-DXP_UNIX $JS_CFLAGS"
 ])
 
 AM_CONDITIONAL([WINDOWS], [test x$IS_WINDOWS = xTRUE])
 
 OLD_LIBS="$LIBS"
-LIBS="$JS_LIBS $LIBS"
 
 OLD_CPPFLAGS="$CPPFLAGS"
-CPPFLAGS="$JS_CFLAGS $CPPFLAGS"
-
-AC_CHECK_HEADER([jsapi.h], [], [
-    AC_CHECK_HEADER([js/jsapi.h], [
-        CPPFLAGS="$CPPFLAGS -I$JS_INCLUDE/js"
-    ], [
-        AC_MSG_ERROR([Could not find the jsapi header.
-
-Are the Mozilla SpiderMonkey headers installed?])
-    ])
-])
-
-AC_CHECK_LIB([mozjs185], [JS_NewContext], [JS_LIB_BASE=mozjs185], [
-    AC_CHECK_LIB([mozjs185-1.0], [JS_NewContext], [JS_LIB_BASE=mozjs185-1.0], [
-        AC_CHECK_LIB([mozjs], [JS_NewContext], [JS_LIB_BASE=mozjs], [
-            AC_CHECK_LIB([js], [JS_NewContext], [JS_LIB_BASE=js], [
-                AC_CHECK_LIB([js3250], [JS_NewContext], [JS_LIB_BASE=js3250], [
-                    AC_CHECK_LIB([js32], [JS_NewContext], [JS_LIB_BASE=js32], [
-                        AC_MSG_ERROR([Could not find the js library.
-
-Is the Mozilla SpiderMonkey library installed?])
-                    ])
-                ])
-            ])
-        ])
-    ])
-])
-
-# Figure out what version of SpiderMonkey to use
-
-AC_CHECK_LIB([$JS_LIB_BASE], [JS_NewCompartmentAndGlobalObject],
-    # Prevent people from accidentally using SpiderMonkey's that are too new
-    if test "$use_js_trunk" = "no"; then
-        AC_CHECK_DECL([JSOPTION_ANONFUNFIX], [], [
-            AC_MSG_ERROR([Your SpiderMonkey library is too new.
-
-Versions of SpiderMonkey after the js185-1.0.0 release remove the optional
-enforcement of preventing anonymous functions in a statement context. This
-will most likely break your existing JavaScript code as well as render all
-example code invalid.
-
-If you wish to ignore this error pass --enable-js-trunk to ./configure.])
-        ], [
-            [#include <jsapi.h>]
-        ])
-    fi
-    AC_DEFINE([SM185], [1], [Use SpiderMonkey 1.8.5])
-)
-
-AC_CHECK_LIB([$JS_LIB_BASE], [JS_ThrowStopIteration],
-    AC_DEFINE([SM180], [1],
-        [Use SpiderMonkey 1.8.0])
-)
-
-AC_CHECK_LIB([$JS_LIB_BASE], [JS_GetStringCharsAndLength],
-    AC_DEFINE([HAVE_JS_GET_STRING_CHARS_AND_LENGTH], [1],
-        [Use newer JS_GetCharsAndLength function.])
-)
-
-# Else, hope that 1.7.0 works
-
-# Deal with JSScript to JSObject to JSScript switcheroo
-
-AC_CHECK_TYPE([JSScript*],
-    [AC_DEFINE([JSSCRIPT_TYPE], [JSScript*], [Use JSObject* for scripts])],
-    [AC_DEFINE([JSSCRIPT_TYPE], [JSObject*], [Use JSScript* for scripts])],
-    [[#include <jsapi.h>]]
-)
-
-AC_DEFINE([COUCHJS_NAME], ["couchjs"], ["CouchJS executable name."])
 
 if test x${IS_WINDOWS} = xTRUE; then
-    AC_DEFINE([COUCHJS_NAME], ["couchjs.exe"], ["CouchJS executable name."])
-    if test -f "$JS_LIB_DIR/$JS_LIB_BASE.dll"; then
-        # seamonkey 1.7- build layout on Windows
-        JS_LIB_BINARY="$JS_LIB_DIR/$JS_LIB_BASE.dll"
-    else
-        # seamonkey 1.8+ build layout on Windows
-        if test -f "$JS_LIB_DIR/../bin/$JS_LIB_BASE.dll"; then
-            JS_LIB_BINARY="$JS_LIB_DIR/../bin/$JS_LIB_BASE.dll"
-        else
-        AC_MSG_ERROR([Could not find $JS_LIB_BASE.dll.])
-        fi
-    fi
-    AC_SUBST(JS_LIB_BINARY)
     # On windows we need to know the path to the openssl binaries.
     AC_ARG_WITH([openssl-bin-dir],
         [AS_HELP_STRING([--with-openssl-bin-dir=PATH],
@@ -342,10 +212,6 @@ if test x${IS_WINDOWS} = xTRUE; then
         AC_MSG_WARN([Installer may fail due to missing MSVC redistributable.])
     fi
 fi
-
-JS_LIBS="-l$JS_LIB_BASE -lm $JS_LIBS"
-
-AC_SUBST(JS_LIBS)
 
 LIBS="$OLD_LIBS"
 CPPFLAGS="$OLD_CPPFLAGS"
@@ -379,13 +245,6 @@ AC_ARG_WITH([win32-curl],
     # OpenSSL libraries may be pulled in via libcurl if it was built with SSL
     # these are libeay32 ssleay32 instead of crypto ssl on unix
 ], [
-    AX_LIB_CURL([7.18.0],[
-        AC_DEFINE([HAVE_CURL], [1], ["Provide HTTP support to couchjs"])
-    ],[
-        AC_MSG_WARN([You will be unable to run some JavaScript unit tests.])
-        use_curl=no
-        CURL_LIBS=
-    ])
 ])
 
 AC_SUBST(CURL_CFLAGS)
