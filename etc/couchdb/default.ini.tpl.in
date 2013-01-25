@@ -117,8 +117,8 @@ credentials = false
 use_users_db = false
 
 [query_servers]
-javascript = %bindir%/%couchjs_command_name% %localbuilddatadir%/server/main.js
-coffeescript = %bindir%/%couchjs_command_name% %localbuilddatadir%/server/main-coffee.js
+javascript = couchjs %localbuilddatadir%/server/main.js
+coffeescript = couchjs %localbuilddatadir%/server/main-coffee.js
 
 
 ; Changing reduce_limit to false will disable reduce_limit.
