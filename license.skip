@@ -23,7 +23,6 @@
 ^bin/Makefile
 ^bin/Makefile.in
 ^bin/couchdb.1
-^bin/couchjs.1
 ^build-aux/.*
 ^config..*
 ^configure
@@ -94,7 +93,6 @@
 ^src/couchdb/priv/Makefile
 ^src/couchdb/priv/Makefile.in
 ^src/couchdb/priv/couch_icu_driver.la
-^src/couchdb/priv/couchjs
 ^src/couchdb/priv/couchspawnkillable
 ^src/couchdb/priv/stat_descriptions.cfg
 ^src/erlang-oauth/.*
