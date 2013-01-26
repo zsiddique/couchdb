@@ -449,6 +449,28 @@ handle_info({'EXIT', Pid, snappy_nif_not_loaded}, Server) ->
         Server
     end,
     {noreply, Server2};
+handle_info({'EXIT', Pid, Reason}=Error, Server) ->
+    case ets:lookup(couch_dbs_by_pid, Pid) of
+    [{Pid, Db}] ->
+        DbName = Db#db.name,
+        ?LOG_ERROR(
+           "Unexpected exit of database process ~p [~p], restarting: ~p",
+           [Pid, DbName, Reason]
+        ),
+        % If the Pid is known, the name should be as well.
+        % If not, that's an error we'll let crash out on this case statement.
+        case ets:lookup(couch_dbs_by_name, DbName) of
+        [{_, {opening, Pid, _Froms}}] ->
+            ok;
+        [{_, {opened, Pid, LruTime}}] ->
+            true = ets:delete(couch_dbs_by_lru, LruTime)
+        end,
+        true = ets:delete(couch_dbs_by_name, DbName),
+        true = ets:delete(couch_dbs_by_pid, DbName);
+    true ->
+        ?LOG_ERROR("Unexpected message, restarting couch_server: ~p", [Error])
+    end,
+    {noreply, Server};
 handle_info(Error, _Server) ->
     ?LOG_ERROR("Unexpected message, restarting couch_server: ~p", [Error]),
     exit(kill).
