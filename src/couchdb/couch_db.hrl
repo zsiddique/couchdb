@@ -53,7 +53,7 @@
 -define(LOG_WARN(Format, Args),
     case couch_log:warn_on(?MODULE) of
         true ->
-            couch_log:info(Format, Args);
+            couch_log:warn(Format, Args);
         false -> ok
     end).
 
