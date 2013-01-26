@@ -426,7 +426,7 @@ code_change(_OldVsn, State, _Extra) ->
     
 handle_info({'EXIT', _Pid, config_change}, Server) ->
     {noreply, shutdown, Server};
-handle_info({'EXIT', Pid, Reason}=Error, Server) ->
+handle_info({'EXIT', Pid, Reason}, Server) ->
     Server2 = case ets:lookup(couch_dbs_by_pid, Pid) of
     [{Pid, Db}] ->
         DbName = Db#db.name,
@@ -467,11 +467,7 @@ handle_info({'EXIT', Pid, Reason}=Error, Server) ->
             Server;
         [] ->
             Server#server{dbs_open = Server#server.dbs_open - 1}
-        end;
-    true ->
-        ?LOG_ERROR("Unexpected message, restarting couch_server: ~p", [Error]),
-        exit(kill),
-        Server
+        end
     end,
     {noreply, Server2};
 handle_info(Error, _Server) ->
