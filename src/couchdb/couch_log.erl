@@ -15,9 +15,9 @@
 
 % public API
 -export([start_link/0, stop/0]).
--export([debug/2, info/2, error/2]).
--export([debug_on/0, info_on/0, get_level/0, get_level_integer/0, set_level/1]).
--export([debug_on/1, info_on/1, get_level/1, get_level_integer/1, set_level/2]).
+-export([debug/2, info/2, warn/2, error/2]).
+-export([debug_on/0, info_on/0, warn_on/0, get_level/0, get_level_integer/0, set_level/1]).
+-export([debug_on/1, info_on/1, warn_on/1, get_level/1, get_level_integer/1, set_level/2]).
 -export([read/2]).
 
 % gen_event callbacks
