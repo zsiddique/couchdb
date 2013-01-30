@@ -146,18 +146,7 @@ var Loop = function() {
       respond(["error","unnamed_error",e.toSource()]);
     }
   };
-
-  if(readline.async) {
-    readline.async(got_line)
-  } else {
-    while(line = readline())
-      got_line(null, line)
-  }
-
-  function got_line(er, line) {
-    if(er)
-      throw er
-
+  while (line = readline()) {
     cmd = JSON.parse(line);
     State.line_length = line.length;
     try {
@@ -172,9 +161,6 @@ var Loop = function() {
     } catch(e) {
       handleError(e);
     }
-
-    if(readline.async)
-      readline.async(got_line)
   };
 };
 
