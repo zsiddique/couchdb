@@ -150,6 +150,20 @@ AC_ARG_WITH([erlang],
 
 AC_SUBST(ERLANG_FLAGS)
 
+AC_ARG_WITH([js-include],
+    [AS_HELP_STRING([--with-js-include=PATH],
+        [Deprecated; no more SpiderMonkey support])
+], [
+    AC_MSG_WARN([No more SpiderMonkey support: --with-js-include is deprecated])
+], [])
+
+AC_ARG_WITH([js-lib],
+    [AS_HELP_STRING([--with-js-lib=PATH],
+        [Deprecated; no more SpiderMonkey support])
+], [
+    AC_MSG_WARN([No more SpiderMonkey support: --with-js-lib is deprecated])
+], [])
+
 AC_ARG_VAR([ERLC_FLAGS], [general flags to prepend to ERLC_FLAGS])
 AC_ARG_VAR([FLAGS], [general flags to prepend to LDFLAGS and CPPFLAGS])
 
