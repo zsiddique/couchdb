@@ -19,10 +19,19 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-var util = require('util');
+// Changes for CouchDB by Jason Smith <jhs@apache.org>
+
+var Console = (function() {
+  var exports = {};
+  var module = {'exports':exports};
+  var util = Util;
+  var assert = {'ok':function(a, b) { if(!a) throw new Error(b) }};
+  // -- CommonJS wrapper
+
+//var util = require('util');
 
 exports.log = function() {
-  process.stdout.write(util.format.apply(this, arguments) + '\n');
+  log(util.format.apply(this, arguments));
 };
 
 
@@ -30,7 +39,7 @@ exports.info = exports.log;
 
 
 exports.warn = function() {
-  process.stderr.write(util.format.apply(this, arguments) + '\n');
+  log(util.format.apply(this, arguments));
 };
 
 
@@ -38,7 +47,7 @@ exports.error = exports.warn;
 
 
 exports.dir = function(object) {
-  process.stdout.write(util.inspect(object) + '\n');
+  log(util.inspect(object));
 };
 
 
@@ -75,3 +84,7 @@ exports.assert = function(expression) {
     require('assert').ok(false, util.format.apply(this, arr));
   }
 };
+
+  // -- CommonJS wrapper
+  return exports;
+})();
