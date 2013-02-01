@@ -19,6 +19,14 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+// Changes for CouchDB by Jason Smith <jhs@apache.org>
+
+var Util = (function() {
+  var process = {};
+  var exports = {};
+  var module = {'exports':exports};
+  // -- CommonJS wrapper
+
 var formatRegExp = /%[sdj%]/g;
 exports.format = function(f) {
   if (typeof f !== 'string') {
@@ -556,3 +564,7 @@ exports._extend = function(origin, add) {
   }
   return origin;
 };
+
+  // -- CommonJS wrapper
+  return exports;
+})();
