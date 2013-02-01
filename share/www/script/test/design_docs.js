@@ -162,6 +162,16 @@ couchTests.design_docs = function(debug) {
         }
       },
       shows: {
+        logging:
+          (function() {
+            try {
+              var log = typeof console.log;
+              var format = typeof util.format;
+              return util.format("%d types: %s and %j", 2, log, format);
+            } catch (er) {
+              return '{}';
+            }
+          }).toString(),
         simple:
           (function() {
             return 'ok';
@@ -224,6 +234,11 @@ couchTests.design_docs = function(debug) {
     );
     T(xhr.status == 200);
     TEquals("ok", xhr.responseText, 'query server used wrong ddoc');
+
+    // Test the console.log() and util.format() API.
+    xhr = CouchDB.request("GET", "/test_suite_db/_design/test/_show/logging");
+    T(xhr.status == 200);
+    TEquals(xhr.responseText, '2 types: function and "function"');
 
     // test commonjs require
     xhr = CouchDB.request("GET", "/test_suite_db/_design/test/_show/requirey");

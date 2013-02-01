@@ -15,9 +15,11 @@ SUBDIRS = doc
 JS_FILE = server/main.js
 
 JS_FILE_COMPONENTS = \
+    server/console.js \
     server/json2.js \
     server/filter.js \
     server/mimeparse.js \
+    server/nodejs_util.js \
     server/render.js \
     server/state.js \
     server/util.js \
