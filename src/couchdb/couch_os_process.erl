@@ -142,7 +142,7 @@ readjson(OsProc) when is_record(OsProc, os_proc) ->
         case ?JSON_DECODE(Line) of
         [<<"log">>, Msg] when is_binary(Msg) ->
             % we got a message to log. Log it and continue
-            ?LOG_VIEW(Msg),
+            couch_log:view(Msg),
             readjson(OsProc);
         [<<"error">>, Id, Reason] ->
             throw({error, {couch_util:to_existing_atom(Id),Reason}});

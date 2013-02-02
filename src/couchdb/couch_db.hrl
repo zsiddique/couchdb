@@ -59,8 +59,6 @@
 
 -define(LOG_ERROR(Format, Args), couch_log:error(Format, Args)).
 
--define(LOG_VIEW(Message), couch_log:view(Message)).
-
 % Tree::term() is really a tree(), but we don't want to require R13B04 yet
 -type branch() :: {Key::term(), Value::term(), Tree::term()}.
 -type path() :: {Start::pos_integer(), branch()}.
