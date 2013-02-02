@@ -90,7 +90,6 @@ init([]) ->
         end),
 
     Filename = couch_config:get("log", "file", "couchdb.log"),
-    JsFilename = couch_config:get("log", "view_file", Filename),
     Level = level_integer(list_to_atom(couch_config:get("log", "level", "info"))),
     Sasl = couch_config:get("log", "include_sasl", "true") =:= "true",
     LevelByModule = couch_config:get("log_level_by_module"),
@@ -105,20 +104,32 @@ init([]) ->
         ets:insert(?MODULE, {Module, ModuleLevelInteger})
     end, LevelByModule),
 
+    ViewFilename = case couch_config:get("log", "view_file", Filename) of
+        Filename ->
+            Filename;
+        OtherFilename ->
+            case filename:pathtype(OtherFilename) of
+            relative ->
+                LogDir = filename:dirname(Filename),
+                filename:join(LogDir, OtherFilename);
+            _ ->
+                OtherFilename
+            end
+        end,
 
     case file:open(Filename, [append]) of
     {ok, Fd} ->
-        case JsFilename of
+        case ViewFilename of
         Filename ->
             {ok, #state{fd = Fd, view_fd = Fd, level = Level, sasl = Sasl}};
         _ ->
-            case file:open(JsFilename, [append]) of
-            {ok, JsFd} ->
-                {ok, #state{fd = Fd, view_fd = JsFd, level = Level, sasl = Sasl}};
+            case file:open(ViewFilename, [append]) of
+            {ok, ViewFd} ->
+                {ok, #state{fd = Fd, view_fd = ViewFd, level = Level, sasl = Sasl}};
             {error, Reason} ->
                 ReasonStr = file:format_error(Reason),
-                io:format("Error opening JavaScript log file ~s: ~s", [JsFilename, ReasonStr]),
-                {stop, {error, ReasonStr, JsFilename}}
+                io:format("Error opening JavaScript log file ~s: ~s", [ViewFilename, ReasonStr]),
+                {stop, {error, ReasonStr, ViewFilename}}
             end
         end;
     {error, Reason} ->
