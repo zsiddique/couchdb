@@ -31,6 +31,7 @@
 
 -record(state, {
     fd,
+    view_fd,
     level,
     sasl
 }).
@@ -78,6 +79,8 @@ init([]) ->
     ok = couch_config:register(
         fun("log", "file") ->
             ?MODULE:stop();
+        ("log", "view_file") ->
+            ?MODULE:stop();
         ("log", "level") ->
             ?MODULE:stop();
         ("log", "include_sasl") ->
@@ -87,6 +90,7 @@ init([]) ->
         end),
 
     Filename = couch_config:get("log", "file", "couchdb.log"),
+    JsFilename = couch_config:get("log", "view_file", Filename),
     Level = level_integer(list_to_atom(couch_config:get("log", "level", "info"))),
     Sasl = couch_config:get("log", "include_sasl", "true") =:= "true",
     LevelByModule = couch_config:get("log_level_by_module"),
@@ -104,7 +108,19 @@ init([]) ->
 
     case file:open(Filename, [append]) of
     {ok, Fd} ->
-        {ok, #state{fd = Fd, level = Level, sasl = Sasl}};
+        case JsFilename of
+        Filename ->
+            {ok, #state{fd = Fd, view_fd = Fd, level = Level, sasl = Sasl}};
+        _ ->
+            case file:open(JsFilename, [append]) of
+            {ok, JsFd} ->
+                {ok, #state{fd = Fd, view_fd = JsFd, level = Level, sasl = Sasl}};
+            {error, Reason} ->
+                ReasonStr = file:format_error(Reason),
+                io:format("Error opening JavaScript log file ~s: ~s", [JsFilename, ReasonStr]),
+                {stop, {error, ReasonStr, JsFilename}}
+            end
+        end;
     {error, Reason} ->
         ReasonStr = file:format_error(Reason),
         io:format("Error opening log file ~s: ~s", [Filename, ReasonStr]),
