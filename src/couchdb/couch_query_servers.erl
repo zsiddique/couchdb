@@ -30,6 +30,7 @@
 
 -record(proc, {
     pid,
+    debug_port,
     lang,
     ddoc_keys = [],
     prompt_fun,
@@ -480,18 +481,21 @@ new_process(Langs, LangLimits, Lang) ->
         % we are below the limit for our language, make a new one
         case ets:lookup(Langs, Lang) of
         [{Lang, Mod, Func, Arg0}] ->
-            Arg = case {Lang, Arg0} of
+            {Arg, DebugPort} = case {Lang, Arg0} of
             {<<"javascript">>, [_OneElement]} ->
-                DebugPort = 5858 + random:uniform(1000),
-                EnvOpt = {env, [{"COUCHJS_DEBUG_PORT", integer_to_list(DebugPort)}]},
-                Arg0 ++ [[], [EnvOpt]];
-            _ -> Arg0
+                DbgPort = 5858 + random:uniform(1000),
+                EnvOpt = {env, [{"COUCHJS_DEBUG_PORT", integer_to_list(DbgPort)}]},
+                AllArgs = Arg0 ++ [ [], [EnvOpt] ],
+                {AllArgs, DbgPort};
+            _ -> {Arg0, nil}
             end,
+
             {ok, Pid} = apply(Mod, Func, Arg),
             erlang:monitor(process, Pid),
             true = ets:insert(LangLimits, {Lang, Lim, Current+1}),
             {ok, #proc{lang=Lang,
                        pid=Pid,
+                       debug_port=DebugPort,
                        % Called via proc_prompt, proc_set_timeout, and proc_stop
                        prompt_fun={Mod, prompt},
                        prompt_many_fun={Mod, prompt_many},
