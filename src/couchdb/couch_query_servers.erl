@@ -479,7 +479,14 @@ new_process(Langs, LangLimits, Lang) ->
     if (Lim == 0) or (Current < Lim) -> % Lim == 0 means no limit
         % we are below the limit for our language, make a new one
         case ets:lookup(Langs, Lang) of
-        [{Lang, Mod, Func, Arg}] ->
+        [{Lang, Mod, Func, Arg0}] ->
+            Arg = case {Lang, Arg0} of
+            {<<"javascript">>, [_OneElement]} ->
+                DebugPort = 5858 + random:uniform(1000),
+                EnvOpt = {env, [{"COUCHJS_DEBUG_PORT", integer_to_list(DebugPort)}]},
+                Arg0 ++ [[], [EnvOpt]];
+            _ -> Arg0
+            end,
             {ok, Pid} = apply(Mod, Func, Arg),
             erlang:monitor(process, Pid),
             true = ets:insert(LangLimits, {Lang, Lim, Current+1}),
