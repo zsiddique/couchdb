@@ -33,8 +33,13 @@
 start_link(Command) ->
     start_link(Command, []).
 start_link(Command, Options) ->
-    start_link(Command, Options, ?PORT_OPTIONS).
-start_link(Command, Options, PortOptions) ->
+    start_link(Command, Options, []).
+start_link(Command, Options, ExtraPortOptions) ->
+    % The ?PORT_OPTIONS are the defaults.
+    PortOptions = lists:foldl(fun({Key, Val}=Option, State) ->
+        lists:keystore(Key, 1, State, Option)
+    end, ?PORT_OPTIONS, ExtraPortOptions),
+    io:format("start_link: ~p\n", [PortOptions]),
     gen_server:start_link(couch_os_process, [Command, Options, PortOptions], []).
 
 stop(Pid) ->
