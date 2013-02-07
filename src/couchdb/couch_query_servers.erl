@@ -483,7 +483,7 @@ new_process(Langs, LangLimits, Lang) ->
         [{Lang, Mod, Func, Arg0}] ->
             {Arg, DebugPort} = case {Lang, Arg0} of
             {<<"javascript">>, [_OneElement]} ->
-                DbgPort = 5858 + random:uniform(1000),
+                DbgPort = 5858 + (random:uniform(500) * 2),
                 EnvOpt = {env, [{"COUCHJS_DEBUG_PORT", integer_to_list(DbgPort)}]},
                 AllArgs = Arg0 ++ [ [], [EnvOpt] ],
                 {AllArgs, DbgPort};
