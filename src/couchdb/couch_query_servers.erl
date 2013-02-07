@@ -357,8 +357,9 @@ handle_call({get_debugging, Lang}, _From, Server) ->
     case ets:lookup(LangProcs, Lang) of
     [{Lang, Procs}] ->
         Ports = lists:map(fun(#proc{pid=Pid, debug_port=Port}) ->
-            PidStr = io_lib:format("~w", [Pid]),
-            {?l2b(PidStr), Port}
+            [PidStr] = io_lib:format("~w", [Pid]),
+            Pids = string:substr(PidStr, 2, length(PidStr) - 2),
+            {?l2b(Pids), Port}
         end, Procs),
         {reply, Ports, Server};
     _ ->
