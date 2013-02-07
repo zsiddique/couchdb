@@ -162,6 +162,7 @@ The response is the JSON structure:
           "_oauth" : "{couch_httpd_oauth, handle_oauth_req}",
           "_restart" : "{couch_httpd_misc_handlers, handle_restart_req}",
           "_uuids" : "{couch_httpd_misc_handlers, handle_uuids_req}",
+          "_debug" : "{couch_httpd_debug, handle_debug_req}",
           "_stats" : "{couch_httpd_stats_handlers, handle_stats_req}"
        }
     }
