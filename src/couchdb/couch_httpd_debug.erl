@@ -18,9 +18,88 @@
 -import(couch_httpd, [header_value/2, send_method_not_allowed/2]).
 
 
-handle_debug_req(#httpd{method='GET'}=Req) -> ok
+handle_debug_req(#httpd{method='GET', path_parts=[_Debug]}=Req) -> ok
     , ok = couch_httpd:verify_is_server_admin(Req)
-    , couch_httpd:send_json(Req, 200, {[ {ok, true} ]})
+    , Procs = couch_query_servers:debug_ports("javascript")
+    , Pids = [ Pid || {Pid, _Port} <- Procs ]
+    , couch_httpd:send_json(Req, 200, {[ {ok,true}, {pids, Pids} ]})
+    ;
+
+handle_debug_req(#httpd{method='GET', path_parts=[_Debug, Pid | _Rest]=Path}=Req) -> ok
+    , ok = couch_httpd:verify_is_server_admin(Req)
+    , io:format("Must look up: ~p for: ~p\n", [Pid, Path])
+    , Procs = couch_query_servers:debug_ports("javascript")
+    , case lists:keyfind(Pid, 1, Procs)
+        of {Pid, Port} -> ok
+            , InspectorPort = Port + 1
+            %, proxy_to_inspector(Req, InspectorPort)
+            , R = couch_httpd:send_json(Req, 200, {[ {ok,true}, {todo,<<"To do">>} ]})
+            , io:format("send_json returns: ~p\n", [R])
+            , R
+        ; false -> ok
+            , io:format("No such pid: ~p\n", [Pid])
+            , couch_httpd:send_json(Req, 404, {[ {error,pid_not_found}, {pid,Pid} ]})
+        end
+    ;
+
+handle_debug_req(Req) -> ok
+    , send_method_not_allowed(Req, "GET")
+    .
+
+relay(#httpd{mochi_req=MochiReq}=Req, InspectorSocket) -> ok
+    , ReqBytes = request_to_iolist(Req)
+    , Client = MochiReq:get(socket)
+    , gen_tcp:send(InspectorSocket, ReqBytes)
+    , relay(Client, InspectorSocket, 0, 0)
+    .
+
+relay(Client, Remote, BytesIn, BytesOut) -> ok
+    %, io:format("Relay in=~w out=~w\n", [BytesIn, BytesOut])
+    , inet:setopts(Client, [{packet,0}, {active,once}])
+    , inet:setopts(Remote, [{packet,0}, {active,once}])
+    , receive
+        {_Type, Client, Data} -> ok
+            %, io:format("  ~w bytes from client\n", [size(Data)])
+            , gen_tcp:send(Remote, Data)
+            , relay(Client, Remote, BytesIn + size(Data), BytesOut)
+        ; {_Type, Remote, Data} -> ok
+            %, io:format("  ~w bytes from inspector\n", [size(Data)])
+            , gen_tcp:send(Client, Data)
+            , relay(Client, Remote, BytesIn, BytesOut + size(Data))
+        ; {tcp_closed, _} -> ok
+            , io:format("Relay finished in=~w out=~w\n", [BytesIn, BytesOut])
+            , gen_tcp:close(Client)
+            , gen_tcp:close(Remote)
+            , {ok, BytesIn, BytesOut}
+            , ok
+        ; Else -> ok
+            , ?LOG_ERROR("Relay error: ~p", [Else])
+        end
+    %, couch_httpd:send_json(Req, 200, {[ {ok,true}, {todo,<<"To do">>} ]})
+    .
+
+proxy_to_inspector(Req, Port) -> ok
+    , io:format("Connect to port ~w\n", [Port])
+    , case gen_tcp:connect("127.0.0.1", Port, [binary, {packet,0}, {delay_send,true}])
+        of {ok, InspectorSocket} -> ok
+            , io:format("Connected to inspector on :~w\n", [Port])
+            , relay(Req, InspectorSocket)
+        ; {error, Error} -> ok
+            , Resp = {[ {error,inspector_proxy}, {result, Error} ]}
+            , couch_httpd:send_json(Req, 502, Resp)
+        end
+    .
+
+request_to_iolist(#httpd{method=Method, mochi_req=MochiReq}=Req) -> ok
+    , Path = MochiReq:get(raw_path)
+    , Version = case MochiReq:get(version)
+        of {1,1} -> "1.1"
+        ;  _     -> "1.0"
+        end
+    , Action = io_lib:format("~s ~s HTTP/~s", [Method, Path, Version])
+    , MochiHeaders = mochiweb_headers:to_list(MochiReq:get(headers))
+    , Headers = [ [couch_util:to_binary(Key), ": ", Val, "\r\n"] || {Key, Val} <- MochiHeaders]
+    , [Action, "\r\n", Headers, "\r\n"]
     .
 
 %% Login handler with Browser ID.
