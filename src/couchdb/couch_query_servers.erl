@@ -22,6 +22,7 @@
 -export([filter_view/3]).
 
 -export([with_ddoc_proc/2, proc_prompt/2, ddoc_prompt/3, ddoc_proc_prompt/3, json_doc/1]).
+-export([debug_ports/1]).
 
 % For 210-os-proc-pool.t
 -export([get_os_process/1, ret_os_process/1]).
@@ -240,6 +241,9 @@ validate_doc_update(DDoc, EditDoc, DiskDoc, Ctx, SecObj) ->
             throw({unauthorized, Message})
     end.
 
+debug_ports(Lang) ->
+    gen_server:call(couch_query_servers, {get_debugging, ?l2b(Lang)}).
+
 json_doc(nil) -> null;
 json_doc(Doc) ->
     couch_doc:to_json_obj(Doc, [revs]).
@@ -347,6 +351,18 @@ handle_call({get_proc, Lang}, From, Server) ->
         {noreply, add_to_waitlist({Lang}, From, Server)};
     Error ->
         {reply, Error, Server}
+    end;
+handle_call({get_debugging, Lang}, _From, Server) ->
+    #qserver{lang_procs=LangProcs} = Server,
+    case ets:lookup(LangProcs, Lang) of
+    [{Lang, Procs}] ->
+        Ports = lists:map(fun(#proc{pid=Pid, debug_port=Port}) ->
+            PidStr = io_lib:format("~w", [Pid]),
+            {?l2b(PidStr), Port}
+        end, Procs),
+        {reply, Ports, Server};
+    _ ->
+        {reply, [], Server}
     end;
 handle_call({unlink_proc, Pid}, _From, Server) ->
     unlink(Pid),
