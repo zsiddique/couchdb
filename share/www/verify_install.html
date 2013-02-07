@@ -75,6 +75,8 @@ specific language governing permissions and limitations under the License.
 
       //  temporary view
       var resp = db.query(function(doc) {
+        if(doc.a)
+          debugger
         if(doc.a) {
           emit(doc.a, doc.a);
         }

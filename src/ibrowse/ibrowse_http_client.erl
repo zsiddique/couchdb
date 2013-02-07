@@ -244,6 +244,13 @@ handle_info({trace, Bool}, State) ->
     put(my_trace_flag, Bool),
     {noreply, State};
 
+handle_info({take_stream, Pid}, #state{socket=Socket, reply_buffer=Body}=State) ->
+    io:format("Send socket ~p to ~p\n", [Socket, Pid]),
+    io:format("  rep=~p: ~p\n", [State#state.rep_buf_size, State#state.reply_buffer]),
+    gen_tcp:controlling_process(Socket, Pid),
+    catch Pid ! {permission, Socket, Body},
+    {noreply, State};
+
 handle_info(Info, State) ->
     io:format("Unknown message recvd for ~1000.p:~1000.p -> ~p~n",
               [State#state.host, State#state.port, Info]),
