@@ -22,7 +22,7 @@ handle_debug_req(#httpd{method='GET', path_parts=[_Debug]}=Req) -> ok
     , ok = couch_httpd:verify_is_server_admin(Req)
     , Procs = couch_query_servers:debug_ports("javascript")
     , Pids = [ Pid || {Pid, _Port} <- Procs ]
-    , couch_httpd:send_json(Req, 200, {[ {ok,true}, {pids, Pids} ]})
+    , couch_httpd:send_json(Req, 200, {[ {ok,true}, {pids,Pids}, {procs,{Procs}} ]})
     ;
 
 handle_debug_req(#httpd{method='GET', path_parts=[_Debug, Pid | _Rest]=Path}=Req) -> ok

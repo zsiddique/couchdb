@@ -92,21 +92,24 @@ function get_debuggers() {
       return
 
     res.body.pids.forEach(function(pid) {
-      var link = $('<li><a href="#">' + pid + '</a></li>')
+      var port = res.body.procs[pid] + 1
+      var url = 'http://' + window.location.hostname + ':' + port + '/_debug/' + pid + '/'
+      var link = $('<li><a href="'+url+'">' + pid + '</a></li>')
+      console.log(res.body)
       servers.append(link)
 
       link.find('a').click(function() {
-        inspect_pid(pid)
+        var url = $(this).attr('href')
+        inspect_pid(pid, url)
         return false
       })
     })
   })
 }
 
-function inspect_pid(pid) {
-  var src = '/_debug/' + pid + '/'
+function inspect_pid(pid, url) {
   $('#node_inspector .title').html('Debugging: <' + pid + '>')
-  $('#node_inspector_frame').attr('src', src)
+  $('#node_inspector_frame').attr('src', url)
   $('#node_inspector_frame').css('border', '1px solid black')
 }
 
