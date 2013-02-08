@@ -93,9 +93,9 @@ function get_debuggers() {
 
     res.body.pids.forEach(function(pid) {
       var port = res.body.procs[pid] + 1
-      var url = 'http://' + window.location.hostname + ':' + port + '/_debug/' + pid + '/'
+      var url = '/_debug/' + pid + '/'
       var link = $('<li><a href="'+url+'">' + pid + '</a></li>')
-      console.log(res.body)
+      //console.log(res.body)
       servers.append(link)
 
       link.find('a').click(function() {

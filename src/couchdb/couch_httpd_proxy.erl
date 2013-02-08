@@ -254,11 +254,6 @@ stream_response(Req, ProxyDest, ReqId) ->
             % doesn't get confused.
             ibrowse:stream_next(ReqId),
             stream_response(Req, ProxyDest, ReqId);
-        {ibrowse_async_headers, ReqId, "101", Headers} ->
-            % 101 Switching Protocols
-            {Source, Dest} = get_urls(Req, ProxyDest),
-            FixedHeaders = fix_headers(Source, Dest, Headers, []),
-            relay(ReqId, Req, FixedHeaders);
         {ibrowse_async_headers, ReqId, Status, Headers} ->
             {Source, Dest} = get_urls(Req, ProxyDest),
             FixedHeaders = fix_headers(Source, Dest, Headers, []),
@@ -290,57 +285,6 @@ stream_response(Req, ProxyDest, ReqId) ->
                     {ok, Resp}
             end
     end.
-
-relay(ReqId, #httpd{mochi_req=MochiReq}=Req, FixedHeaders) ->
-    %io:format("Relay: ~p\nReq=~p\nH=~p\n", [ReqId, Req, FixedHeaders]),
-    case ets:lookup(ibrowse_stream, {req_id_pid, ReqId}) of
-        [] ->
-            io:format("Unknown req id ~p\n", [ReqId]);
-        [{_, Pid}] ->
-            io:format("Sending message to ibrowse: ~w\n", [Pid]),
-            catch Pid ! {take_stream, self()},
-            receive
-                {permission, Remote, Data} ->
-                    io:format("Got control of socket: ~p\n", [Remote]),
-                    Client = MochiReq:get(socket),
-                    HeadersIo = [ [Key, ": ", Val, "\r\n"] || {Key, Val} <- FixedHeaders],
-                    Response = iolist_to_binary([ "HTTP/1.1 101 Switching Protocols\r\n", HeadersIo, "\r\n", Data ]),
-                    io:format("Need to send response:\n~p\n", [iolist_to_binary(Response)]),
-                    gen_tcp:send(Client, Response),
-                    relay(Client, Remote, 0, size(Response), Pid)
-                after 1000 ->
-                    io:format("Error, no permission\n")
-            end
-    end,
-    ok.
-
-relay(Client, Remote, FromClient, FromRemote, Owner) -> ok
-    , io:format("Relay in=~w out=~w\n", [FromClient, FromRemote])
-    , inet:setopts(Client, [{packet,0}, {active,once}, {nodelay,true} ])
-    , inet:setopts(Remote, [{packet,0}, {active,once}, {nodelay,true} ])
-    , receive
-        {_Type, Client, Data} -> ok
-            %, io:format("Client: ~p\n", [Data])
-            , gen_tcp:send(Remote, Data)
-            , relay(Client, Remote, FromClient + size(Data), FromRemote, Owner)
-        ; {_Type, Remote, Data} -> ok
-            %, io:format("Remote ~w bytes: ~p\n", [size(Data), Data])
-            , gen_tcp:send(Client, Data)
-            , relay(Client, Remote, FromClient, FromRemote + size(Data), Owner)
-        ; {tcp_closed, S} -> ok
-            , io:format("Closed socket: ~p\n", [S])
-            , io:format("Relay finished in=~w out=~w\n", [FromClient, FromRemote])
-            , gen_tcp:controlling_process(Remote, Owner)
-            , catch Owner ! {stream_close, bad_reqid}
-            %, gen_tcp:close(Client)
-            %, gen_tcp:close(Remote)
-            %, {ok, FromClient, FromRemote}
-            , {ok, true}
-        ; Else -> ok
-            , ?LOG_ERROR("Relay error: ~p", [Else])
-        end
-    %, couch_httpd:send_json(Req, 200, {[ {ok,true}, {todo,<<"To do">>} ]})
-    .
 
 
 stream_chunked_response(Req, ReqId, Resp) ->
