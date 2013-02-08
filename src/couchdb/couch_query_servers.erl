@@ -353,18 +353,9 @@ handle_call({get_proc, Lang}, From, Server) ->
         {reply, Error, Server}
     end;
 handle_call({get_debugging, Lang}, _From, Server) ->
-    #qserver{lang_procs=LangProcs} = Server,
-    case ets:lookup(LangProcs, Lang) of
-    [{Lang, Procs}] ->
-        Ports = lists:map(fun(#proc{pid=Pid, debug_port=Port}) ->
-            [PidStr] = io_lib:format("~w", [Pid]),
-            Pids = string:substr(PidStr, 2, length(PidStr) - 2),
-            {?l2b(Pids), Port}
-        end, Procs),
-        {reply, Ports, Server};
-    _ ->
-        {reply, [], Server}
-    end;
+    #qserver{pid_procs=PidProcs} = Server,
+    Reply = lists:map(fun pid_and_port/1, ets:tab2list(PidProcs)),
+    {reply, Reply, Server};
 handle_call({unlink_proc, Pid}, _From, Server) ->
     unlink(Pid),
     {reply, ok, Server};
@@ -470,6 +461,11 @@ service_waiting({{Lang}, From}, Server) ->
         gen_server:reply(From, Error),
         ok
     end.
+
+pid_and_port({Pid, #proc{debug_port=Port}}) ->
+    [PidStr] = io_lib:format("~w", [Pid]),
+    PidRepr = string:substr(PidStr, 2, length(PidStr) - 2),
+    {?l2b(PidRepr), Port}.
 
 lang_proc(Lang, #qserver{
         langs=Langs,
