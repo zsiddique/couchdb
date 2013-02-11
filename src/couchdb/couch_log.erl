@@ -31,6 +31,7 @@
 
 -record(state, {
     fd,
+    query_srv_fd,
     level,
     sasl
 }).
@@ -78,6 +79,8 @@ init([]) ->
     ok = couch_config:register(
         fun("log", "file") ->
             ?MODULE:stop();
+        ("log", "query_server_file") ->
+            ?MODULE:stop();
         ("log", "level") ->
             ?MODULE:stop();
         ("log", "include_sasl") ->
@@ -101,10 +104,34 @@ init([]) ->
         ets:insert(?MODULE, {Module, ModuleLevelInteger})
     end, LevelByModule),
 
+    QuerySrvFile = case couch_config:get("log", "query_server_file", Filename) of
+        Filename ->
+            Filename;
+        OtherFilename ->
+            case filename:pathtype(OtherFilename) of
+            relative ->
+                LogDir = filename:dirname(Filename),
+                filename:join(LogDir, OtherFilename);
+            _ ->
+                OtherFilename
+            end
+    end,
 
     case file:open(Filename, [append]) of
     {ok, Fd} ->
-        {ok, #state{fd = Fd, level = Level, sasl = Sasl}};
+        case QuerySrvFile of
+        Filename ->
+            {ok, #state{fd = Fd, query_srv_fd = Fd, level = Level, sasl = Sasl}};
+        _ ->
+            case file:open(QuerySrvFile, [append]) of
+            {ok, QueryFd} ->
+                {ok, #state{fd = Fd, query_srv_fd = QueryFd, level = Level, sasl = Sasl}};
+            {error, Reason} ->
+                ReasonStr = file:format_error(Reason),
+                io:format("Error opening JavaScript log file ~s: ~s", [QuerySrvFile, ReasonStr]),
+                {stop, {error, ReasonStr, QuerySrvFile}}
+            end
+        end;
     {error, Reason} ->
         ReasonStr = file:format_error(Reason),
         io:format("Error opening log file ~s: ~s", [Filename, ReasonStr]),
