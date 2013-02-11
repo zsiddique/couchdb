@@ -111,19 +111,7 @@ init([]) ->
         ets:insert(?MODULE, {Module, ModuleLevelInteger})
     end, LevelByModule),
 
-    QuerySrvFile = case couch_config:get("log", "query_server_file", Filename) of
-        Filename ->
-            Filename;
-        OtherFilename ->
-            case filename:pathtype(OtherFilename) of
-            relative ->
-                LogDir = filename:dirname(Filename),
-                filename:join(LogDir, OtherFilename);
-            _ ->
-                OtherFilename
-            end
-    end,
-
+    QuerySrvFile = get_abs_query_server_file(),
     case file:open(Filename, [append]) of
     {ok, Fd} ->
         case QuerySrvFile of
@@ -263,6 +251,24 @@ get_query_server_messages(Pid, Level, Port, Message) ->
     FileMsg = ["[", couch_util:rfc1123_date(), "] ", ConsoleMsg],
     QueryFileMsg = <<Message/binary, "\n">>,
     {ConsoleMsg, FileMsg, QueryFileMsg}.
+
+
+% Get the absolute path to the configured query server file. If it looks like
+% a relative path, then it is relative to the main log file's directory.
+get_abs_query_server_file() ->
+    LogFile = couch_config:get("log", "file", "couchdb.log"),
+    case couch_config:get("log", "query_server_file", LogFile) of
+    LogFile ->
+        LogFile;
+    OtherFile ->
+        case filename:pathtype(OtherFile) of
+        relative ->
+            LogDir = filename:dirname(LogFile),
+            filename:join(LogDir, OtherFile);
+        _ ->
+            OtherFile
+        end
+    end.
 
 
 % Read Bytes bytes from the end of log file, jumping Offset bytes towards
