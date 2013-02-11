@@ -56,6 +56,7 @@ port = 6984
 
 [log]
 file = %localstatelogdir%/couch.log
+; query_server_file =
 level = info
 include_sasl = true
 
