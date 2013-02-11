@@ -81,7 +81,7 @@ exports.trace = function(label) {
 exports.assert = function(expression) {
   if (!expression) {
     var arr = Array.prototype.slice.call(arguments, 1);
-    require('assert').ok(false, util.format.apply(this, arr));
+    throw new Error(util.format.apply(this, arr));
   }
 };
 

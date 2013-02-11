@@ -62,31 +62,6 @@ exports.format = function(f) {
 };
 
 
-// Mark that a method should not be used.
-// Returns a modified function which warns once by default.
-// If --no-deprecation is set, then it is a no-op.
-exports.deprecate = function(fn, msg) {
-  if (process.noDeprecation === true) {
-    return fn;
-  }
-
-  var warned = false;
-  function deprecated() {
-    if (!warned) {
-      if (process.traceDeprecation) {
-        console.trace(msg);
-      } else {
-        console.error(msg);
-      }
-      warned = true;
-    }
-    return fn.apply(this, arguments);
-  }
-
-  return deprecated;
-};
-
-
 exports.print = function() {
   for (var i = 0, len = arguments.length; i < len; ++i) {
     process.stdout.write(String(arguments[i]));
@@ -455,13 +430,6 @@ function objectToString(o) {
 }
 
 
-exports.p = exports.deprecate(function() {
-  for (var i = 0, len = arguments.length; i < len; ++i) {
-    error(exports.inspect(arguments[i]));
-  }
-}, 'util.p: Use console.error() instead.');
-
-
 function pad(n) {
   return n < 10 ? '0' + n.toString(10) : n.toString(10);
 }
@@ -482,49 +450,6 @@ function timestamp() {
 
 exports.log = function(msg) {
   exports.puts(timestamp() + ' - ' + msg.toString());
-};
-
-
-exports.exec = exports.deprecate(function() {
-  return require('child_process').exec.apply(this, arguments);
-}, 'util.exec is now called `child_process.exec`.');
-
-
-exports.pump = function(readStream, writeStream, callback) {
-  var callbackCalled = false;
-
-  function call(a, b, c) {
-    if (callback && !callbackCalled) {
-      callback(a, b, c);
-      callbackCalled = true;
-    }
-  }
-
-  readStream.addListener('data', function(chunk) {
-    if (writeStream.write(chunk) === false) readStream.pause();
-  });
-
-  writeStream.addListener('drain', function() {
-    readStream.resume();
-  });
-
-  readStream.addListener('end', function() {
-    writeStream.end();
-  });
-
-  readStream.addListener('close', function() {
-    call();
-  });
-
-  readStream.addListener('error', function(err) {
-    writeStream.end();
-    call(err);
-  });
-
-  writeStream.addListener('error', function(err) {
-    readStream.destroy();
-    call(err);
-  });
 };
 
 
