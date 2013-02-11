@@ -35,6 +35,8 @@ A list of the available methods and URL paths are provided below:
 +--------+-------------------------+-------------------------------------------+
 | GET    | /_log                   |  Return the server log file               |
 +--------+-------------------------+-------------------------------------------+
+| GET    | /_log/query_server      |  Return the query server log file         |
++--------+-------------------------+-------------------------------------------+
 | POST   | /_replicate             |  Set or cancel replication                |
 +--------+-------------------------+-------------------------------------------+
 | POST   | /_restart               |  Restart the server                       |
@@ -216,6 +218,15 @@ following request:
 
 Reading of the log will start at 2000 bytes from the end of the log, and
 500 bytes will be shown.
+
+If you have configured a ``query_server_file`` in the ``log`` section,
+then you can fetch the query server log file by appending ``/query_server``
+to the URL. This request supports the same options as ``/_log``.
+
+.. code-block:: http
+
+    GET http://couchdb:5984/_log/query_server?bytes=500&offset=2000
+    Accept: */*
 
 .. _replicate:
 
