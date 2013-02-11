@@ -132,6 +132,37 @@ modules and functions:
       [Sat, 03 Nov 2012 17:38:02 GMT] [info] [<0.7543.0>] OS Process #Port<0.3289> Log :: Processing doc 8d300b86622d67953d102165dbe99467
 
 
+.. function:: util.format(format, [...])
+
+   :param format: A printf-like format string, compatible with Node.js.
+   :return: The formatted string
+
+   .. code-block:: javascript
+
+      function(doc){
+        var key = util.format("%s%s", doc.prefix, doc.suffix);
+        emit(key, null);
+      }
+
+.. function:: console.log(format, [...])
+
+   :param format: A printf-like format string, compatible with Node.js.
+
+   .. code-block:: javascript
+
+      function(doc){
+        console.log('Processing doc %s rev %j', doc._id, doc._rev);
+        emit(doc['_id'], null);
+      }
+
+   On map function run in CouchDB logs (e.g. at `/var/log/couchdb/couch.log`)
+   you may find next record:
+
+   .. code-block:: text
+
+      [Sat, 03 Nov 2012 17:38:02 GMT] [info] [<0.7543.0>] OS Process #Port<0.3289> Log :: Processing doc 8d300b86622d67953d102165dbe99467 rev "269-fda3ccf153724273fe458cf72ce2bcf8"
+
+
 .. function:: provides(key, func)
 
    Registers callable handler for specified MIME key.
