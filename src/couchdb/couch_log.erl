@@ -18,7 +18,7 @@
 -export([debug/2, info/2, warn/2, error/2, query_server/2]).
 -export([debug_on/0, info_on/0, warn_on/0, get_level/0, get_level_integer/0, set_level/1]).
 -export([debug_on/1, info_on/1, warn_on/1, get_level/1, get_level_integer/1, set_level/2]).
--export([read/2]).
+-export([read/2, read_query_server/2]).
 
 % gen_event callbacks
 -export([init/1, handle_event/2, terminate/2, code_change/3]).
@@ -289,6 +289,19 @@ get_abs_query_server_file() ->
 
 read(Bytes, Offset) ->
     LogFileName = couch_config:get("log", "file"),
+    read(LogFileName, Bytes, Offset).
+
+read_query_server(Bytes, Offset) ->
+    LogFileName = couch_config:get("log", "file"),
+    QuerySrvFile = get_abs_query_server_file(),
+    case QuerySrvFile of
+    LogFileName ->
+        ""; % No special query server file.
+    _ ->
+        read(QuerySrvFile, Bytes, Offset)
+    end.
+
+read(LogFileName, Bytes, Offset) ->
     case filelib:file_size(LogFileName)
     of 0 ->
         "";

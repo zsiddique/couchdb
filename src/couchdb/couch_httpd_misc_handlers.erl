@@ -257,11 +257,16 @@ increment_update_seq_req(Req, _Db) ->
 
 % httpd log handlers
 
-handle_log_req(#httpd{method='GET'}=Req) ->
+handle_log_req(#httpd{method='GET', path_parts=Path}=Req) ->
     ok = couch_httpd:verify_is_server_admin(Req),
     Bytes = list_to_integer(couch_httpd:qs_value(Req, "bytes", "1000")),
     Offset = list_to_integer(couch_httpd:qs_value(Req, "offset", "0")),
-    Chunk = couch_log:read(Bytes, Offset),
+    Chunk = case Path of
+        [_Log, <<"query_server">>] ->
+            couch_log:read_query_server(Bytes, Offset);
+        _ ->
+            couch_log:read(Bytes, Offset)
+    end,
     {ok, Resp} = start_chunked_response(Req, 200, [
         % send a plaintext response
         {"Content-Type", "text/plain; charset=utf-8"},
