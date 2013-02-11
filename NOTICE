@@ -58,6 +58,10 @@ This product also includes the following third-party components:
 
   Copyright 2010 TJ Holowaychuk <tj@vision-media.ca>
 
+ * console.js, node_util.js (https://github.com/joyent/node)
+
+  Copyright 2013 Joyent, Inc. and other Node contributors
+
  * yajl (http://lloyd.github.com/yajl/)
 
   Copyright 2010, Lloyd Hilaiel
