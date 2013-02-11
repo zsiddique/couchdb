@@ -15,7 +15,7 @@
 
 % public API
 -export([start_link/0, stop/0]).
--export([debug/2, info/2, warn/2, error/2]).
+-export([debug/2, info/2, warn/2, error/2, query_server/2]).
 -export([debug_on/0, info_on/0, warn_on/0, get_level/0, get_level_integer/0, set_level/1]).
 -export([debug_on/1, info_on/1, warn_on/1, get_level/1, get_level_integer/1, set_level/2]).
 -export([read/2]).
@@ -51,6 +51,13 @@ warn(Format, Args) ->
 error(Format, Args) ->
     {ConsoleMsg, FileMsg} = get_log_messages(self(), error, Format, Args),
     gen_event:sync_notify(error_logger, {couch_error, ConsoleMsg, FileMsg}).
+
+query_server(Port, Message) ->
+    MessageBin = couch_util:to_binary(Message),
+    {ConsoleMsg, FileMsg, QueryFileMsg} =
+        get_query_server_messages(self(), info, Port, MessageBin),
+    gen_event:sync_notify(error_logger,
+                          {couch_query_server, ConsoleMsg, FileMsg, QueryFileMsg}).
 
 
 level_integer(error)    -> ?LEVEL_ERROR;
@@ -202,6 +209,9 @@ handle_event({couch_info, ConMsg, FileMsg}, State) ->
 handle_event({couch_debug, ConMsg, FileMsg}, State) ->
     log(State, ConMsg, FileMsg),
     {ok, State};
+handle_event({couch_query_server, ConMsg, FileMsg, QueryFileMsg}, State) ->
+    log_query_server(State, ConMsg, FileMsg, QueryFileMsg),
+    {ok, State};
 handle_event({error_report, _, {Pid, _, _}}=Event, #state{sasl = true} = St) ->
     {ConMsg, FileMsg} = get_log_messages(Pid, error, "~p", [Event]),
     log(St, ConMsg, FileMsg),
@@ -234,11 +244,25 @@ log(#state{fd = Fd}, ConsoleMsg, FileMsg) ->
     ok = io:put_chars(ConsoleMsg),
     ok = io:put_chars(Fd, FileMsg).
 
+log_query_server(#state{fd=Fd, query_srv_fd=QueryFd}=State, ConsoleMsg, FileMsg, QueryMsg) ->
+    log(State, ConsoleMsg, FileMsg),
+    case QueryFd of
+    Fd -> ok;
+    _  -> ok = io:put_chars(QueryFd, QueryMsg)
+    end.
+
 get_log_messages(Pid, Level, Format, Args) ->
     ConsoleMsg = unicode:characters_to_binary(io_lib:format(
         "[~s] [~p] " ++ Format ++ "~n", [Level, Pid | Args])),
     FileMsg = ["[", couch_util:rfc1123_date(), "] ", ConsoleMsg],
     {ConsoleMsg, iolist_to_binary(FileMsg)}.
+
+get_query_server_messages(Pid, Level, Port, Message) ->
+    ConsoleMsg = unicode:characters_to_binary(io_lib:format(
+        "[~s] [~p] OS Process ~p Log :: ~s~n", [Level, Pid, Port, Message])),
+    FileMsg = ["[", couch_util:rfc1123_date(), "] ", ConsoleMsg],
+    QueryFileMsg = <<Message/binary, "\n">>,
+    {ConsoleMsg, FileMsg, QueryFileMsg}.
 
 
 % Read Bytes bytes from the end of log file, jumping Offset bytes towards
