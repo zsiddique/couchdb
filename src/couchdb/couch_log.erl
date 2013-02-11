@@ -283,7 +283,14 @@ get_query_server_messages(Pid, Level, Port, Message) ->
 
 read(Bytes, Offset) ->
     LogFileName = couch_config:get("log", "file"),
-    LogFileSize = filelib:file_size(LogFileName),
+    case filelib:file_size(LogFileName)
+    of 0 ->
+        "";
+    LogFileSize ->
+        read(LogFileName, LogFileSize, Bytes, Offset)
+    end.
+
+read(LogFileName, LogFileSize, Bytes, Offset) ->
     MaxChunkSize = list_to_integer(
         couch_config:get("httpd", "log_max_chunk_size", "1000000")),
     case Bytes > MaxChunkSize of
