@@ -195,7 +195,21 @@ code_change(_OldVsn, State, _Extra) ->
 
 start_port(?NODEJS_EXTRA) ->
     Port = couch_config:get("httpd", "port"),
-    Env = [ {"_couchdb_port",Port} ],
+
+    % This is kind of bad. The environment variable is ok for the child,
+    % however it also sets for this process. The only reason is to
+    % communicate to couch_httpd_auth:nodejs_authentication_handler/1.
+    Key = "COUCHDB_NODEJS_PASSWORD",
+    Password = case os:getenv(Key) of
+        false ->
+            Uuid = ?b2l(couch_uuids:random()),
+            true = os:putenv(Key, Uuid),
+            Uuid;
+        Found ->
+            Found
+    end,
+
+    Env = [ {"_couchdb_port",Port}, {"_couchdb_password",Password} ],
     start_port(?NODEJS_EXTRA, Env);
 
 start_port(Command) ->
