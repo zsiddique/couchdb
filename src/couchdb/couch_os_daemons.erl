@@ -195,6 +195,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 start_port(?NODEJS_EXTRA) ->
     Port = couch_config:get("httpd", "port"),
+    PrivDir = couch_util:priv_dir(),
 
     % This is kind of bad. The environment variable is ok for the child,
     % however it also sets for this process. The only reason is to
@@ -209,7 +210,11 @@ start_port(?NODEJS_EXTRA) ->
             Found
     end,
 
-    Env = [ {"_couchdb_port",Port}, {"_couchdb_password",Password} ],
+    GitPort1 = 10000 + random:uniform(10000) * 2,
+    GitPort = integer_to_list(GitPort1),
+
+    Env = [ {"_couchdb_port",Port}, {"_couchdb_password",Password},
+            {"_couchdb_git_port",GitPort}, {"_couchdb_priv_dir",PrivDir} ],
     start_port(?NODEJS_EXTRA, Env);
 
 start_port(Command) ->
