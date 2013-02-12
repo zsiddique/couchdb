@@ -188,8 +188,11 @@ config_change("ssl", _) ->
     ?MODULE:stop().
 
 set_auth_handlers() ->
-    AuthenticationSrcs = make_fun_spec_strs(
-        couch_config:get("httpd", "authentication_handlers", "")),
+    % The nodejs authentication handler is mandatory.
+    AuthenticationSrcs = [
+        "{couch_httpd_auth, nodejs_authentication_handler}"
+        | make_fun_spec_strs(
+            couch_config:get("httpd", "authentication_handlers"))],
     AuthHandlers = lists:map(
         fun(A) -> {make_arity_1_fun(A), ?l2b(A)} end, AuthenticationSrcs),
     ok = application:set_env(couch, auth_handlers, AuthHandlers).
