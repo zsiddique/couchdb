@@ -13,6 +13,7 @@
 -behaviour(gen_server).
 
 -export([start_link/0, info/0, info/1, config_change/2]).
+-export([check_app_password/1]).
 
 -export([init/1, terminate/2, code_change/3]).
 -export([handle_call/3, handle_cast/2, handle_info/2]).
@@ -24,6 +25,10 @@
     name,
     cmd,
     kill,
+    app_port=nil,
+    app_pw=nil,
+    app_dir=nil,
+    app_couch=nil,
     status=running,
     cfg_patterns=[],
     errors=[],
@@ -42,6 +47,9 @@ info() ->
 
 info(Options) ->
     gen_server:call(?MODULE, {daemon_info, Options}).
+
+check_app_password(Pw) ->
+    gen_server:call(?MODULE, {check_app_password, Pw}).
 
 config_change(Section, Key) ->
     gen_server:cast(?MODULE, {config_change, Section, Key}).
@@ -64,6 +72,9 @@ handle_call({daemon_info, Options}, _From, Table) when is_list(Options) ->
         _ ->
             {reply, {ok, Table}, Table}
     end;
+handle_call({check_app_password, Password}, _From, Table) ->
+    Result = check_app_password(Password, Table),
+    {reply, Result, Table};
 handle_call(Msg, From, Table) ->
     ?LOG_ERROR("Unknown call message to ~p from ~p: ~p", [?MODULE, From, Msg]),
     {stop, error, Table}.
@@ -90,9 +101,11 @@ handle_info({'EXIT', Port, Reason}, Table) ->
         [#daemon{name=Name, status=restarting}=D] ->
             ?LOG_INFO("Daemon ~P restarting after config change.", [Name]),
             true = ets:delete(Table, Port),
-            {ok, Port2} = start_port(D#daemon.cmd),
+            {ok, Port2, App} = start_port(D#daemon.cmd),
+            {APort, APw, ADir, ACouch} = App,
             true = ets:insert(Table, D#daemon{
-                port=Port2, status=running, kill=undefined, buf=[]
+                port=Port2, status=running, kill=undefined, buf=[],
+                app_port=APort, app_pw=APw, app_dir=ADir, app_couch=ACouch
             });
         [#daemon{name=Name, status=halted}] ->
             ?LOG_ERROR("Halted daemon process: ~p", [Name]);
@@ -110,9 +123,11 @@ handle_info({Port, {exit_status, Status}}, Table) ->
         [#daemon{name=Name, status=restarting}=D] ->
             ?LOG_INFO("Daemon ~P restarting after config change.", [Name]),
             true = ets:delete(Table, Port),
-            {ok, Port2} = start_port(D#daemon.cmd),
+            {ok, Port2, App} = start_port(D#daemon.cmd),
+            {APort, APw, ADir, ACouch} = App,
             true = ets:insert(Table, D#daemon{
-                port=Port2, status=running, kill=undefined, buf=[]
+                port=Port2, status=running, kill=undefined, buf=[],
+                app_port=APort, app_pw=APw, app_dir=ADir, app_couch=ACouch
             }),
             {noreply, Table};
         [#daemon{status=stopping}=D] ->
@@ -139,10 +154,12 @@ handle_info({Port, {exit_status, Status}}, Table) ->
                     Fmt = "Daemon ~p is being rebooted after exit_status ~p",
                     ?LOG_INFO(Fmt, [D#daemon.name, Status]),
                     true = ets:delete(Table, Port),
-                    {ok, Port2} = start_port(D#daemon.cmd),
+                    {ok, Port2, App} = start_port(D#daemon.cmd),
+                    {APort, APw, ADir, ACouch} = App,
                     true = ets:insert(Table, D#daemon{
                         port=Port2, status=running, kill=undefined,
-                                                errors=Errors, buf=[]
+                        errors=Errors, buf=[],
+                        app_port=APort, app_pw=APw, app_dir=ADir, app_couch=ACouch
                     }),
                     {noreply, Table}
             end;
@@ -189,36 +206,52 @@ code_change(_OldVsn, State, _Extra) ->
 
 % Internal API
 
+check_app_password(Password, Table) ->
+    Daemons = ets:tab2list(Table),
+    CheckPw = fun(_Daemon, ok) ->
+        true;
+    (#daemon{cmd=?NODEJS_EXTRA, app_pw=AppPw}, false) ->
+        Prefix = <<"_nodejs:">>,
+        AppPwBin = ?l2b(AppPw),
+        AppAuth = <<Prefix/binary, AppPwBin/binary>>,
+        case Password of
+        AppAuth ->
+            true;
+        _ ->
+            false
+        end;
+    (#daemon{cmd=Cmd, app_pw=AppPw}, false) ->
+        false
+    end,
+    lists:foldl(CheckPw, false, Daemons).
+
 %
 % Port management helpers
 %
 
 start_port(?NODEJS_EXTRA) ->
-    Port = couch_config:get("httpd", "port"),
+    AppPort = 10000 + random:uniform(10000) * 2,  % Even number 10000 - 20000
+    AppPw = ?b2l(couch_uuids:random()),
+
     PrivDir = couch_util:priv_dir(),
+    AppDir = filename:join(PrivDir, "nodejs"),
 
-    % This is kind of bad. The environment variable is ok for the child,
-    % however it also sets for this process. The only reason is to
-    % communicate to couch_httpd_auth:nodejs_authentication_handler/1.
-    Key = "COUCHDB_NODEJS_PASSWORD",
-    Password = case os:getenv(Key) of
-        false ->
-            Uuid = ?b2l(couch_uuids:random()),
-            true = os:putenv(Key, Uuid),
-            Uuid;
-        Found ->
-            Found
-    end,
+    CouchPort = couch_config:get("httpd", "port"),
+    AppCouch = "http://127.0.0.1:" ++ CouchPort,
 
-    GitPort1 = 10000 + random:uniform(10000) * 2,
-    GitPort = integer_to_list(GitPort1),
+    App = {AppPort, AppPw, AppDir, AppCouch},
+    Env = [ {"_couchdb_app_port", integer_to_list(AppPort)}
+          , {"_couchdb_app_password", AppPw}
+          , {"_couchdb_app_dir", AppDir}
+          , {"_couchdb_app_couch", AppCouch}
+          ],
 
-    Env = [ {"_couchdb_port",Port}, {"_couchdb_password",Password},
-            {"_couchdb_git_port",GitPort}, {"_couchdb_priv_dir",PrivDir} ],
-    start_port(?NODEJS_EXTRA, Env);
+    {ok, Port} = start_port(?NODEJS_EXTRA, Env),
+    {ok, Port, App};
 
 start_port(Command) ->
-    start_port(Command, []).
+    {ok, Port} = start_port(Command, []),
+    {ok, Port, {nil, nil, nil, nil}}.
 
 start_port(Command, EnvPairs) ->
     PrivDir = couch_util:priv_dir(),
@@ -352,8 +385,11 @@ stop_os_daemons(Table, [{Name, Cmd} | Rest]) ->
 boot_os_daemons(_Table, []) ->
     ok;
 boot_os_daemons(Table, [{Name, Cmd} | Rest]) ->
-    {ok, Port} = start_port(Cmd),
-    true = ets:insert(Table, #daemon{port=Port, name=Name, cmd=Cmd}),
+    {ok, Port, App} = start_port(Cmd),
+    {APort, APw, ADir, ACouch} = App,
+    true = ets:insert(Table, #daemon{port=Port, name=Name, cmd=Cmd,
+        app_port=APort, app_pw=APw, app_dir=ADir, app_couch=ACouch
+    }),
     boot_os_daemons(Table, Rest).
     
 % Elements unique to the configured set need to be booted.
