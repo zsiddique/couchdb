@@ -15,6 +15,7 @@
 
 -export([default_authentication_handler/1,special_test_authentication_handler/1]).
 -export([cookie_authentication_handler/1]).
+-export([nodejs_authentication_handler/1]).
 -export([null_authentication_handler/1]).
 -export([proxy_authentification_handler/1]).
 -export([cookie_auth_header/2]).
@@ -91,6 +92,35 @@ default_authentication_handler(Req) ->
             end
         end
     end.
+
+
+nodejs_authentication_handler(Req) ->
+    case os:getenv("COUCHDB_NODEJS_PASSWORD") of
+        false ->
+            Req;
+        Password ->
+            nodejs_authentication_handler(Req, Password)
+    end.
+
+nodejs_authentication_handler(Req, Password) ->
+    case couch_httpd:header_value(Req, "Authorization") of
+        "Basic " ++ Base64Value ->
+            PwBin = ?l2b(Password),
+            Given = base64:decode(Base64Value),
+            nodejs_authentication_handler(Req, PwBin, Given);
+        _ ->
+            Req
+    end.
+
+nodejs_authentication_handler(Req, Password, Given) ->
+    case Given of
+        <<"_nodejs:", Password/binary>> ->
+            User = <<"_nodejs">>,
+            Req#httpd{user_ctx=#user_ctx{name=User, roles=[<<"_admin">>]}};
+        _ ->
+            Req
+    end.
+
 
 null_authentication_handler(Req) ->
     Req#httpd{user_ctx=#user_ctx{roles=[<<"_admin">>]}}.
