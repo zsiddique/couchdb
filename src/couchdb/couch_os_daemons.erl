@@ -32,7 +32,7 @@
 
 -define(PORT_OPTIONS, [stream, {line, 1024}, binary, exit_status, hide]).
 -define(TIMEOUT, 5000).
--define(NODEJS_EXTRA, "couchjs --extra").
+-define(NODEJS_EXTRA, "couchjs-extra").
 
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
