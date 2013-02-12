@@ -104,10 +104,8 @@ nodejs_authentication_handler(Req) ->
     end.
 
 nodejs_authentication_handler(Req, Given) ->
-    io:format("Need to see if this is good: ~p\n", [Given]),
     case couch_os_daemons:check_app_password(Given) of
     true ->
-        io:format("Good password\n"),
         User = <<"_nodejs">>,
         Req#httpd{user_ctx=#user_ctx{name=User, roles=[<<"_admin">>]}};
     _ ->

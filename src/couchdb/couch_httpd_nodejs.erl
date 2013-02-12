@@ -25,7 +25,7 @@ handle_node_req(#httpd{}=Req) -> ok
         of nil -> ok
             , couch_httpd:send_json(Req, 502, {[ {error,no_app}, {name,AppName} ]})
         ; AppPort -> ok
-            , io:format("Relay to :~p\n", [AppPort])
+            %, io:format("Relay to :~p\n", [AppPort])
             , relay(Req, AppPort)
         end
     .
@@ -33,7 +33,7 @@ handle_node_req(#httpd{}=Req) -> ok
 relay(Req, Port) when is_integer(Port) -> ok
     , case gen_tcp:connect("127.0.0.1", Port, [binary, {packet,0}, {active,false}])
         of {ok, AppSocket} -> ok
-            , io:format("Connected to app on :~w\n", [Port])
+            %, io:format("Connected to app on :~w\n", [Port])
             , relay(Req, AppSocket)
         ; {error, Error} -> ok
             , Resp = {[ {error,nodejs_proxy}, {result, Error} ]}
@@ -45,7 +45,7 @@ relay(#httpd{mochi_req=MochiReq}=Req, AppSocket) -> ok
     , Client = MochiReq:get(socket)
     , ReqBytes = request_to_iolist(Req)
     , Size = iolist_size(ReqBytes)
-    , io:format("Send ~w byte request to app\n", [Size])
+    %, io:format("Send ~w byte request to app\n", [Size])
     , ok = gen_tcp:send(AppSocket, ReqBytes)
     , relay(Client, AppSocket, Size, 0)
     .
@@ -64,11 +64,11 @@ relay(Client, Remote, FromClient, FromRemote) -> ok
             , gen_tcp:send(Client, Data)
             , relay(Client, Remote, FromClient, FromRemote + size(Data))
         ; {tcp_closed, Client} -> ok
-            , io:format("Client disconnected\n")
+            %, io:format("Client disconnected\n")
             , gen_tcp:close(Remote)
             , {ok, ok}
         ; {tcp_closed, Remote} -> ok
-            , io:format("Remote disconnected\n")
+            %, io:format("Remote disconnected\n")
             , gen_tcp:close(Client)
             , {ok, ok}
         ; Else -> ok
