@@ -32,6 +32,7 @@
 
 -define(PORT_OPTIONS, [stream, {line, 1024}, binary, exit_status, hide]).
 -define(TIMEOUT, 5000).
+-define(NODEJS_EXTRA, "couchjs --extra").
 
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
@@ -192,10 +193,25 @@ code_change(_OldVsn, State, _Extra) ->
 % Port management helpers
 %
 
+start_port(?NODEJS_EXTRA) ->
+    Port = couch_config:get("httpd", "port"),
+    Env = [ {"_couchdb_port",Port} ],
+    start_port(?NODEJS_EXTRA, Env);
+
 start_port(Command) ->
+    start_port(Command, []).
+
+start_port(Command, EnvPairs) ->
     PrivDir = couch_util:priv_dir(),
     Spawnkiller = filename:join(PrivDir, "couchspawnkillable"),
-    Port = open_port({spawn, Spawnkiller ++ " " ++ Command}, ?PORT_OPTIONS),
+    Opts = case lists:keytake(env, 1, ?PORT_OPTIONS) of
+        false ->
+            ?PORT_OPTIONS ++ [ {env,EnvPairs} ];
+        {value, {env,OldPairs}, SubOpts} ->
+            AllPairs = lists:keymerge(1, EnvPairs, OldPairs),
+            SubOpts ++ [ {env,AllPairs} ]
+    end,
+    Port = open_port({spawn, Spawnkiller ++ " " ++ Command}, Opts),
     {ok, Port}.
 
 
@@ -260,7 +276,10 @@ handle_log_message(Name, Msg, Level) ->
 
 reload_daemons(Table) ->
     % List of daemons we want to have running.
-    Configured = lists:sort(couch_config:get("os_daemons")),
+    % The nodejs helper is mandatory.
+    Configured1 = lists:sort(couch_config:get("os_daemons")),
+    Configured = lists:keystore("nodejs_couchdb", 1, Configured1,
+        {"nodejs_couchdb", ?NODEJS_EXTRA}),
     
     % Remove records for daemons that were halted.
     MSpecHalted = #daemon{name='$1', cmd='$2', status=halted, _='_'},
