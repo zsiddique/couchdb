@@ -13,7 +13,7 @@
 -behaviour(gen_server).
 
 -export([start_link/0, info/0, info/1, config_change/2]).
--export([check_app_password/1]).
+-export([check_app_password/1, get_app_port/1]).
 
 -export([init/1, terminate/2, code_change/3]).
 -export([handle_call/3, handle_cast/2, handle_info/2]).
@@ -51,6 +51,9 @@ info(Options) ->
 check_app_password(Pw) ->
     gen_server:call(?MODULE, {check_app_password, Pw}).
 
+get_app_port(Name) ->
+    gen_server:call(?MODULE, {get_app_port, Name}).
+
 config_change(Section, Key) ->
     gen_server:cast(?MODULE, {config_change, Section, Key}).
 
@@ -74,6 +77,9 @@ handle_call({daemon_info, Options}, _From, Table) when is_list(Options) ->
     end;
 handle_call({check_app_password, Password}, _From, Table) ->
     Result = check_app_password(Password, Table),
+    {reply, Result, Table};
+handle_call({get_app_port, Name}, _From, Table) ->
+    Result = get_app_port(Name, Table),
     {reply, Result, Table};
 handle_call(Msg, From, Table) ->
     ?LOG_ERROR("Unknown call message to ~p from ~p: ~p", [?MODULE, From, Msg]),
@@ -205,6 +211,16 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 % Internal API
+
+get_app_port(Name, Table) ->
+    AppsSpec = #daemon{name=Name, app_port='$1', _='_'},
+    Ports = [ Port || [Port] <- ets:match(Table, AppsSpec) ],
+    case Ports of
+    [] ->
+        nil;
+    [Port | _Rest] ->
+        Port
+    end.
 
 check_app_password(Password, Table) ->
     Daemons = ets:tab2list(Table),
