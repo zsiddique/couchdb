@@ -95,30 +95,23 @@ default_authentication_handler(Req) ->
 
 
 nodejs_authentication_handler(Req) ->
-    case os:getenv("COUCHDB_NODEJS_PASSWORD") of
-        false ->
-            Req;
-        Password ->
-            nodejs_authentication_handler(Req, Password)
-    end.
-
-nodejs_authentication_handler(Req, Password) ->
     case couch_httpd:header_value(Req, "Authorization") of
         "Basic " ++ Base64Value ->
-            PwBin = ?l2b(Password),
             Given = base64:decode(Base64Value),
-            nodejs_authentication_handler(Req, PwBin, Given);
+            nodejs_authentication_handler(Req, Given);
         _ ->
             Req
     end.
 
-nodejs_authentication_handler(Req, Password, Given) ->
-    case Given of
-        <<"_nodejs:", Password/binary>> ->
-            User = <<"_nodejs">>,
-            Req#httpd{user_ctx=#user_ctx{name=User, roles=[<<"_admin">>]}};
-        _ ->
-            Req
+nodejs_authentication_handler(Req, Given) ->
+    io:format("Need to see if this is good: ~p\n", [Given]),
+    case couch_os_daemons:check_app_password(Given) of
+    true ->
+        io:format("Good password\n"),
+        User = <<"_nodejs">>,
+        Req#httpd{user_ctx=#user_ctx{name=User, roles=[<<"_admin">>]}};
+    _ ->
+        Req
     end.
 
 
