@@ -25,7 +25,24 @@ handle_node_req(#httpd{}=Req) -> ok
         of nil -> ok
             , couch_httpd:send_json(Req, 502, {[ {error,no_app}, {name,AppName} ]})
         ; AppPort -> ok
-            %, io:format("Relay to :~p\n", [AppPort])
+            , handle_node_req(AppPort, Req)
+        end
+    .
+
+handle_node_req(AppPort, #httpd{mochi_req=MochiReq, path_parts=[Node_js | _Rest]}=Req) -> ok
+    % Forward the request to Node.js. TCP relay is preferred for requests for a
+    % vhost, because socket.io works. However TCP cannot be used for direct
+    % requests (/_nodejs) because the client may re-use the connection for
+    % subsequent CouchDB requests, but they would go to Node instead.
+    %, io:format("Node req:\n~p\n", [Req])
+    , case MochiReq:get_header_value("x-couchdb-vhost-path")
+        of undefined -> ok
+            , Url = "http://127.0.0.1:" ++ integer_to_list(AppPort)
+                    ++ "/" ++ ?b2l(Node_js)
+            %, io:format("Manual proxy: ~p\n", [Url])
+            , couch_httpd_proxy:handle_proxy_req(Req, ?l2b(Url))
+        ; _Found -> ok
+            %, io:format("TCP relay: ~p\n", [AppPort])
             , relay(Req, AppPort)
         end
     .
