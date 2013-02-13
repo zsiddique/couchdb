@@ -62,6 +62,9 @@ basic_name_pw(Req) ->
         nil
     end.
 
+default_authentication_handler(#httpd{path_parts=[<<"_nodejs">> | _Rest]}=Req) ->
+    Req;
+
 default_authentication_handler(Req) ->
     case basic_name_pw(Req) of
     {User, Pass} ->
