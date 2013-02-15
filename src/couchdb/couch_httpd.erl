@@ -348,6 +348,9 @@ handle_request_int(MochiReq, DefaultFun,
             send_error(HttpReq, bad_request);
         exit:normal ->
             exit(normal);
+        exit:{bad_request, Reason} ->
+            send_error(HttpReq, {bad_request, Reason}),
+            exit(normal);
         exit:snappy_nif_not_loaded ->
             ErrorReason = "To access the database or view index, Apache CouchDB"
                 " must be built with Erlang OTP R13B04 or higher.",

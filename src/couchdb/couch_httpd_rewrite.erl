@@ -127,7 +127,7 @@ handle_rewrite_req(#httpd{
         NumRewrites when NumRewrites < MaxRewrites ->
             put(couch_rewrite_count, NumRewrites + 1);
         _ ->
-            throw({bad_request, <<"Exceeded rewrite recursion limit">>})
+            exit({bad_request, <<"Exceeded rewrite recursion limit">>})
     end,
 
     #doc{body={Props}} = DDoc,
