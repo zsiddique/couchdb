@@ -15,7 +15,7 @@
 
 
 -export([start_link/1,stop/0, couch_config_start_link_wrapper/2,
-        restart_core_server/0, config_change/2]).
+        config_change/2]).
 
 -include("couch_db.hrl").
 
@@ -29,9 +29,6 @@ start_link(IniFiles) ->
     _Else ->
         {error, already_started}
     end.
-
-restart_core_server() ->
-    init:restart().
 
 couch_config_start_link_wrapper(IniFiles, FirstConfigPid) ->
     case is_process_alive(FirstConfigPid) of
