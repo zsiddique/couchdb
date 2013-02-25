@@ -216,10 +216,13 @@ Build and System Integration:
 Version 0.10.2
 --------------
 
-Replicator
+Security:
+
+ * Fixed CVE-2010-0009: Apache CouchDB Timing Attack Vulnerability
+
+Replicator:
 
  * Avoid leaking file descriptors on automatic replication restarts.
- * Close security vulnerability CVE-2010-0009.
 
 Build and System Integration:
 
