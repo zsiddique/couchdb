@@ -23,7 +23,7 @@ HTTP Interface:
  * Fix for connections not getting closed after rejecting a chunked request.
    (COUCHDB-55)
  * CouchDB can now be bound to IPv6 addresses.
- * The HTTP Server header now contains the versions of CouchDB and Erlang.
+ * The HTTP `Server` header now contains the versions of CouchDB and Erlang.
 
 JavaScript View Server:
 
@@ -32,7 +32,7 @@ JavaScript View Server:
  * Improve error handling for undefined values emitted by map functions.
    (COUCHDB-83)
 
-Packaging and System Integration:
+Build and System Integration:
 
  * The `couchdb` script no longer uses `awk` for configuration checks as this
    was causing portability problems.
@@ -56,10 +56,10 @@ Database Core:
    and old document revisions.
  * Support for incremental map/reduce views has been added.
  * To support map/reduce, the structure of design documents has changed. View
-   values are now JSON objects containing at least a "map" member, and
-   optionally a "reduce" member.
+   values are now JSON objects containing at least a `map` member, and
+   optionally a `reduce` member.
  * View servers are now identified by name (for example `javascript`) instead of
-   by MIME type.
+   by media type.
  * Automatically generated document IDs are now based on proper UUID generation
    using the crypto module.
  * The field `content-type` in the JSON representation of attachments has been
@@ -89,8 +89,8 @@ HTTP Interface:
    is an object with at least a `map` member, and optional `reduce` and
    `language` members.
  * Temporary views no longer determine the view server based on the Content-Type
-   header of the `POST` request, but rather by looking for a `language` member in
-   the JSON body of the request.
+   header of the `POST` request, but rather by looking for a `language` member
+   in the JSON body of the request.
  * The status code of responses to `DELETE` requests is now 200 to reflect that
    that the deletion is performed synchronously.
 

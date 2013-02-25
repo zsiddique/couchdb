@@ -11,7 +11,7 @@ Version 0.8.1-incubating
 ------------------------
 
  * Various bug fixes for replication, compaction, the HTTP interface and the
-   Javascript View Server.
+   JavaScript View Server.
 
 Version 0.8.0-incubating
 ------------------------
