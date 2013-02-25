@@ -18,12 +18,12 @@ Note: This version has not been released yet.
 Version 0.11.2
 --------------
 
+  * Fixed CVE-2010-2234: Apache CouchDB Cross Site Request Forgery Attack
+  * Avoid potential DOS attack by guarding all creation of atoms.
   * Replicator buxfixes for replicating design documents from secured databases.
   * Better error messages on invalid URL requests.
   * User documents can now be deleted by admins or the user.
-  * Avoid potential DOS attack by guarding all creation of atoms.
   * Some Futon and JavaScript library bugfixes.
-  * Fixed CVE-2010-2234: Apache CouchDB Cross Site Request Forgery Attack
 
 Version 0.11.1
 --------------

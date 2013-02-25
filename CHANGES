@@ -15,6 +15,11 @@ Storage System:
 Version 0.11.2
 --------------
 
+Security:
+
+  * Fixed CVE-2010-2234: Apache CouchDB Cross Site Request Forgery Attack
+  * Avoid potential DOS attack by guarding all creation of atoms.
+
 Replicator:
 
   * Fix bug when pushing design docs by non-admins, which was hanging the 
@@ -29,10 +34,6 @@ HTTP Interface:
 Authentication:
 
   * User documents can now be deleted by admins or the user.
-
-Security:
-
-  * Avoid potential DOS attack by guarding all creation of atoms.
   
 Futon:
 
