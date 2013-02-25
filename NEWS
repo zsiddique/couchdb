@@ -7,23 +7,23 @@ For details about backwards incompatible changes, see:
 
 Each release section notes when backwards incompatible changes have been made.
 
-Version 0.11.3
---------------
-
-Note: This version has not been released yet.
-
-  * Fix for frequently edited documents in multi-master deployments being
-    duplicated in _changes and _all_docs.
+# Version 0.11.3
+# --------------
+#
+# Note: This version has not been released yet.
+#
+#  * Fix for frequently edited documents in multi-master deployments being
+#    duplicated in _changes and _all_docs.
 
 Version 0.11.2
 --------------
 
-  * Fixed CVE-2010-2234: Apache CouchDB Cross Site Request Forgery Attack
-  * Avoid potential DOS attack by guarding all creation of atoms.
-  * Replicator buxfixes for replicating design documents from secured databases.
-  * Better error messages on invalid URL requests.
-  * User documents can now be deleted by admins or the user.
-  * Some Futon and JavaScript library bugfixes.
+ * Fixed CVE-2010-2234: Apache CouchDB Cross Site Request Forgery Attack
+ * Avoid potential DOS attack by guarding all creation of atoms.
+ * Replicator buxfixes for replicating design documents from secured databases.
+ * Better error messages on invalid URL requests.
+ * User documents can now be deleted by admins or the user.
+ * Some Futon and JavaScript library bugfixes.
 
 Version 0.11.1
 --------------
