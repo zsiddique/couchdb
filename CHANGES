@@ -16,16 +16,16 @@ Build and System Integration:
 Version 0.10.1
 --------------
 
-Replicator
+Replicator:
 
  * Stability enhancements regarding redirects, timeouts, OAuth.
 
-Query Server
+Query Server:
 
  * Avoid process leaks
  * Allow list and view to span languages
 
-Stats
+Stats:
 
  * Eliminate new process flood on system wake
 
@@ -36,24 +36,24 @@ Build and System Integration:
 Version 0.10.0
 --------------
 
-Storage Format
+Storage Format:
 
  * Add move headers with checksums to the end of database files for extra robust
    storage and faster storage.
 
-View Server
+View Server:
 
  * Added native Erlang views for high-performance applications.
-
-Build and System Integration:
-
- * Changed `couchdb` script configuration options.
- * Added default.d and local.d configuration directories to load sequence.
 
 HTTP Interface:
 
  * Added optional cookie-based authentication handler.
  * Added optional two-legged OAuth authentication handler.
+
+Build and System Integration:
+
+ * Changed `couchdb` script configuration options.
+ * Added default.d and local.d configuration directories to load sequence.
 
 Version 0.9.2
 -------------
