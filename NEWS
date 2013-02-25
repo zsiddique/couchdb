@@ -23,7 +23,7 @@ This release contains backwards incompatible changes, please see above for help.
  * Added support for incremental map/reduce views.
  * Changed database file format.
  * Many improvements to Futon, the web administration interface.
- * Miscellaneous improvements to system integration and portability.
+ * Miscellaneous improvements to build, system integration, and portability.
  * Swapped out Erlang's inets HTTP server for the Mochiweb HTTP server.
  * SpiderMonkey is no longer included with CouchDB, but rather treated as an
    external dependency.
@@ -66,13 +66,13 @@ Version 0.5.0
 Version 0.4.0
 -------------
 
- * Non-existant variables are now nil lists.
+ * Non-existent variables are now nil lists.
  * Couch error codes and messages are no longer sent in the HTTP fields,
    instead they are exclusively returned in the XML body. This is to avoid HTTP
    header parsing problems with oddly formed error messages.
  * Returned error messages are now logged at the server at the `info` level to
    make general debugging easier.
- * Fixed a problem where big table builds caused timesout errors.
+ * Fixed a problem where big table builds caused timeout errors.
  * Lots of changes in the low level machinery. Most formulas will continue to
    function the same.
  * Added full compiler support for extended characters in formula source.
