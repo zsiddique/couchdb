@@ -16,7 +16,7 @@ Version 0.8.1-incubating
 Version 0.8.0-incubating
 ------------------------
 
-This release contains backwards incompatible changes, please see above for help.
+This release contains backwards incompatible changes.
 
  * Changed core licensing to the Apache Software License 2.0.
  * Refactoring of the core view and storage engines.
