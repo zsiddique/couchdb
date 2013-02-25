@@ -1,7 +1,7 @@
 Apache CouchDB NEWS
 ===================
 
-For details about backwards incompatible changes, please see:
+For details about backwards incompatible changes, see:
 
   http://wiki.apache.org/couchdb/Breaking_changes
 
@@ -85,8 +85,8 @@ Version 0.3.0
  * CouchDB now fully supports Unicode and locale specific collation via the ICU
    library, both in the Fabric engine and computed tables.
  * The `in` operator has been added to Fabric.
- * The `startdoc` query string variable specifies the starting document to use if
-   there are multiple rows with identical startkeys.
+ * The `startdoc` query string variable specifies the starting document to use
+   if there are multiple rows with identical startkeys.
  * The `skip` query string variable specifies the number of rows to skip before
    returning results. The `skip` value must be a positive integer. If used with
    a `count` variable the skipped rows aren't counted as output.
