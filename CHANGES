@@ -518,6 +518,21 @@ Build and System Integration:
  * Gavin McDonald setup a build-bot instance. More info can be found at
    http://ci.apache.org/buildbot.html
 
+Version 0.10.2
+--------------
+
+Security:
+
+ * Fixed CVE-2010-0009: Apache CouchDB Timing Attack Vulnerability
+
+Replicator:
+
+ * Avoid leaking file descriptors on automatic replication restarts.
+
+Build and System Integration:
+
+ * Fixed distribution preparation for building on Mac OS X.
+
 Version 0.10.1
 --------------
 
