@@ -10,7 +10,7 @@ Each release section notes when backwards incompatible changes have been made.
 # Version 0.11.3
 # --------------
 #
-# Note: This version has not been released yet.
+# This version has not been released yet.
 #
 #  * Fix for frequently edited documents in multi-master deployments being
 #    duplicated in _changes and _all_docs.
