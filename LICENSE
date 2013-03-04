@@ -603,3 +603,9 @@ For the share/server/coffee-script.js file
   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
   OTHER DEALINGS IN THE SOFTWARE.
+
+For the src/couch_dbupdates component
+
+  2009-2012 (c) Benoît Chesneau <benoitc@e-engura.org>
+
+  Apache 2 License, see above.

@@ -6,6 +6,12 @@ Apache CouchDB CHANGES
 #
 # This version has not been released yet.
 #
+# HTTP Interface
+#
+#  * Added /_db_update API endpoint to get notified about creating,
+#    updating nad deleting of databases. Supports `continuous`,
+#    `longpoll` and `eventsource` `?feed=` parameter.
+#
 # Test Suite:
 #
 #  * Split up replicator_db tests into multiple independent tests.
