@@ -135,19 +135,18 @@ AC_ARG_WITH([erlang],
 ], [
     ERLANG_FLAGS="-I$withval"
 ], [
+    ERLANG_FLAGS=""
     realerl=`readlink -f $ERL 2>/dev/null`
     AS_IF([test $? -eq 0], [
         erlbase=`dirname $realerl`
         erlbase=`dirname $erlbase`
         ERLANG_FLAGS="-I${erlbase}/usr/include"
-    ], [
-        # Failed to figure out where erl is installed..
-        # try to add some default directories to search
-        ERLANG_FLAGS="-I${libdir}/erlang/usr/include"
-        ERLANG_FLAGS="$ERLANG_FLAGS -I/usr/lib/erlang/usr/include"
-        ERLANG_FLAGS="$ERLANG_FLAGS -I/usr/local/lib/erlang/usr/include"
-        ERLANG_FLAGS="$ERLANG_FLAGS -I/opt/local/lib/erlang/usr/include"
     ])
+    # Add alternative locations for headers.
+    ERLANG_FLAGS="-I${libdir}/erlang/usr/include"
+    ERLANG_FLAGS="$ERLANG_FLAGS -I/usr/lib/erlang/usr/include"
+    ERLANG_FLAGS="$ERLANG_FLAGS -I/usr/local/lib/erlang/usr/include"
+    ERLANG_FLAGS="$ERLANG_FLAGS -I/opt/local/lib/erlang/usr/include"
 ])
 
 AC_SUBST(ERLANG_FLAGS)
