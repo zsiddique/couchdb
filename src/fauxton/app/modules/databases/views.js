@@ -13,10 +13,11 @@
 define([
   "app",
 
+  "modules/fauxton/base",
   "api"
 ],
 
-function(app, FauxtonAPI) {
+function(app, Fauxton, FauxtonAPI) {
   var Views = {};
 
   Views.Item = FauxtonAPI.View.extend({
@@ -32,6 +33,7 @@ function(app, FauxtonAPI) {
 
   Views.List = FauxtonAPI.View.extend({
     dbLimit: 10,
+    perPage: 10,
     template: "templates/databases/list",
     events: {
       "click button.all": "selectAll",
@@ -39,7 +41,8 @@ function(app, FauxtonAPI) {
     },
 
     initialize: function(options) {
-      this.collection.on("add", this.render, this);
+      var params = app.getParams();
+      this.page = params.page ? parseInt(params.page, 10) : 1;
     },
 
     serialize: function() {
@@ -61,12 +64,31 @@ function(app, FauxtonAPI) {
       }
     },
 
+    paginated: function() {
+      var start = (this.page - 1) * this.perPage;
+      var end = this.page * this.perPage - 1;
+      return this.collection.slice(start, end);
+    },
+
     beforeRender: function() {
-      this.collection.each(function(database) {
+      _.each(this.paginated(), function(database) {
         this.insertView("table.databases tbody", new Views.Item({
           model: database
         }));
       }, this);
+
+      this.insertView("#database-pagination", new Fauxton.Pagination({
+        page: this.page,
+        perPage: this.perPage,
+        total: this.collection.length,
+        urlFun: function(page) {
+          return "#/_all_dbs?page=" + page;
+        }
+      }));
+    },
+
+    setPage: function(page) {
+      this.page = page || 1;
     },
 
     afterRender: function() {
