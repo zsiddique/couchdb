@@ -116,7 +116,12 @@ the License.
 
 
   <p>
-    Showing 1-<%= database.models.length %> of <%= database.totalRows() %> rows
+    Showing
+    <% if (database.models.length > 0) { %>
+      1-<%= database.models.length %> of <%= database.totalRows() %> rows
+    <% } else{ %>
+      0 documents. <a href="#/database/test/new">Create your first document</a>.
+    <% } %>
     <% if (database.updateSeq()) { %>
       -- Update Sequence: <%= database.updateSeq() %>
     <% } %>
