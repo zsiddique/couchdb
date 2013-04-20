@@ -968,6 +968,7 @@ copy_compact(Db, NewDb0, Retry) ->
     commit_data(NewDb4#db{update_seq=Db#db.update_seq}).
 
 start_copy_compact(#db{name=Name,filepath=Filepath,header=#db_header{purge_seq=PurgeSeq}}=Db) ->
+    erlang:put(io_class, compaction),
     CompactFile = Filepath ++ ".compact",
     ?LOG_DEBUG("Compaction process spawned for db \"~s\"", [Name]),
     case couch_file:open(CompactFile) of

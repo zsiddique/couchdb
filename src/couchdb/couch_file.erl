@@ -106,14 +106,14 @@ append_term_md5(Fd, Term, Options) ->
 %%----------------------------------------------------------------------
 
 append_binary(Fd, Bin) ->
-    gen_server:call(Fd, {append_bin, assemble_file_chunk(Bin)}, infinity).
+    couch_io_regulator:io(Fd, {append_bin, assemble_file_chunk(Bin)}).
     
 append_binary_md5(Fd, Bin) ->
-    gen_server:call(Fd,
-        {append_bin, assemble_file_chunk(Bin, couch_util:md5(Bin))}, infinity).
+    couch_io_regulator:io(Fd,
+        {append_bin, assemble_file_chunk(Bin, couch_util:md5(Bin))}).
 
 append_raw_chunk(Fd, Chunk) ->
-    gen_server:call(Fd, {append_bin, Chunk}, infinity).
+    couch_io_regulator:io(Fd, {append_bin, Chunk}).
 
 
 assemble_file_chunk(Bin) ->
@@ -148,7 +148,7 @@ pread_binary(Fd, Pos) ->
 
 
 pread_iolist(Fd, Pos) ->
-    case gen_server:call(Fd, {pread_iolist, Pos}, infinity) of
+    case couch_io_regulator:io(Fd, {pread_iolist, Pos}) of
     {ok, IoList, <<>>} ->
         {ok, IoList};
     {ok, IoList, Md5} ->

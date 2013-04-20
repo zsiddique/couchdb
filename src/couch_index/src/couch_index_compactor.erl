@@ -97,6 +97,7 @@ compact(Parent, Mod, IdxState) ->
     compact(Parent, Mod, IdxState, []).
 
 compact(Idx, Mod, IdxState, Opts) ->
+    erlang:put(io_class, compaction),
     DbName = Mod:get(db_name, IdxState),
     Args = [DbName, Mod:get(idx_name, IdxState)],
     ?LOG_INFO("Compaction started for db: ~s idx: ~s", Args),

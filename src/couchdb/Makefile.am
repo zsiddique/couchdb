@@ -57,6 +57,7 @@ source_files = \
     couch_httpd_rewrite.erl \
     couch_httpd_stats_handlers.erl \
     couch_httpd_vhost.erl \
+    couch_io_regulator.erl \
     couch_key_tree.erl \
     couch_log.erl \
     couch_native_process.erl \
@@ -114,6 +115,7 @@ compiled_files = \
     couch_httpd_rewrite.beam \
     couch_httpd_stats_handlers.beam \
     couch_httpd_vhost.beam \
+    couch_io_regulator.beam \
     couch_key_tree.beam \
     couch_log.beam \
     couch_native_process.beam \
