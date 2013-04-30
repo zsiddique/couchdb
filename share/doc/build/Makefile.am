@@ -183,6 +183,7 @@ src_files = \
 
 src_files_html = \
     ../static/rtd.css \
+    ../templates/asf-comments.html \
     ../templates/help.html \
     ../templates/searchbox.html \
     ../templates/utilities.html

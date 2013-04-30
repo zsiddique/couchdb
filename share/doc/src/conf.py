@@ -53,6 +53,7 @@ html_sidebars= {
         "relations.html",
         "utilities.html",
         "help.html",
+        "asf-comments.html"
     ]
 }
 
