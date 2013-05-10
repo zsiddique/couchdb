@@ -1,0 +1,21 @@
+{
+  "name": "nvd3",
+  "version": "1.0.0",
+  "description": "nvd3 - d3.js graphing library",
+  "homepage": "http://nvd3.org/",
+  "keywords": [
+    "d3",
+    "dom",
+    "timeline",
+    "visualization"
+  ],
+  "nvd3": {
+    "dependencies": {
+      "d3": "x"
+    },
+    "main": "nv.d3.js",
+    "shim": {
+      "deps": ["d3"]
+    }
+  }
+}

@@ -22,15 +22,13 @@
 
   <title>Project Fauxton</title>
 
-  <!-- Application styles. -->
-  <link rel="stylesheet" href="/css/index.css">
   <style type="text/css">
     body {
     padding-top: 60px;
     padding-bottom: 40px;
     }
   </style>
-  <base href="/"></base>
+
 </head>
 
 <body id="home">
@@ -47,7 +45,20 @@
     </footer>
   </div>
 
-  <!-- Application source. -->
-  <script data-main="/app/config" src="/assets/js/libs/require.js"></script>
+<!-- Le javascript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script type="text/javascript">
+  function load(){
+    require(['js/main'], function (app) {});
+  }
+  function loadDev(){
+        var script = document.createElement("script");
+        script.src = 'jam/require.js';
+        script.onload = load;
+        document.head.appendChild( script );
+  }
+</script>
+<script src="jam/require.prod.js" onerror="loadDev()" onload="load()"></script>
 </body>
 </html>
