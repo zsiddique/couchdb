@@ -39,7 +39,7 @@ define([
   // "modules/logs/base",
   // "modules/config/base",
 
-  "js/load_addons"
+  "addons"
 ],
 
 function(req, app, Initialize, FauxtonAPI, Fauxton, Layout, Databases, Documents, Pouch, LoadAddons) {
