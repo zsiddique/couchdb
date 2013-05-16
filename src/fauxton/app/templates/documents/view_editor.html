@@ -54,12 +54,12 @@ the License.
                 <% if (newView) { %>
                   <textarea class="js-editor" id="map-function"><%= langTemplates.map %></textarea>
                 <% } else { %>
-                  <textarea class="js-editor" id="map-function"><%= ddoc.get('doc').views[viewCollection.view].map %></textarea>
+                  <textarea class="js-editor" id="map-function"><%= ddoc.get('views')[viewCollection.view].map %></textarea>
                 <% } %>
               </div>
             </div>
             <div class="control-group">
-              <label class="control-label" for="reduce-function-selector">Reduce function <a target="_couch_docs" href="http://docs.couchdb.org/en/latest/ddocs/#reduce-and-rereduce-functions"><i class="icon-question-sign"></i></a></label>
+              <label class="control-label" for="reduce-function-selector">Reduce function <a target="_couch_docs" href="http://docs.couchdb.org/en/latest/ddocs.html#reduce-and-rereduce-functions"><i class="icon-question-sign"></i></a></label>
               <div class="controls">
                 <select id="reduce-function-selector">
                   <option value="" <%= !reduceFunStr ? 'selected="selected"' : '' %>>None</option>
@@ -77,7 +77,7 @@ the License.
                 <% if (newView) { %>
                   <textarea class="js-editor" id="reduce-function"><%= langTemplates.reduce %></textarea>
                 <% } else { %>
-                  <textarea class="js-editor" id="reduce-function"><%= ddoc.get('doc').views[viewCollection.view].reduce %></textarea>
+                  <textarea class="js-editor" id="reduce-function"><%= ddoc.get('views')[viewCollection.view].reduce %></textarea>
                 <% } %>
               </div>
             </div>

@@ -55,8 +55,9 @@ function(app, Fauxton) {
     }
   });
 
-  FauxtonAPI.navigate = function(url) {
-    Backbone.history.navigate(url, true);
+  FauxtonAPI.navigate = function(url, _opts) {
+    var options = _.extend({trigger: true}, _opts );
+    app.router.navigate(url,options);
   };
 
   FauxtonAPI.addHeaderLink = function(link) {

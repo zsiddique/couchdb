@@ -16,7 +16,7 @@ define([
        "api",
 
        // Modules
-       "modules/documents/resources",
+       "modules/documents/views",
        "modules/databases/base"
 ],
 
@@ -32,7 +32,7 @@ function(app, FauxtonAPI, Documents, Databases) {
       var databaseName = options[0], docID = options[1];
 
       this.database = this.database || new Databases.Model({id: databaseName});
-      this.doc = this.doc || new Documents.Doc({
+      this.doc = new Documents.Doc({
         _id: docID
       }, {
         database: this.database
@@ -251,6 +251,7 @@ function(app, FauxtonAPI, Documents, Databases) {
       };
 
       this.setView("#dashboard-content", new Documents.Views.AllDocsList({
+        database: this.data.database,
         collection: this.data.indexedDocs,
         nestedView: Documents.Views.Row,
         viewList: true,
@@ -287,9 +288,7 @@ function(app, FauxtonAPI, Documents, Databases) {
       }));
 
       this.sidebar.setSelectedTab('new-view');
-
     }
-
   });
 
   var ChangesRouteObject = FauxtonAPI.RouteObject.extend({

@@ -14,6 +14,8 @@ define([
   "app",
 
   "api",
+ 
+  "modules/documents/resources",
 
   // Libs
   "codemirror",
@@ -22,9 +24,10 @@ define([
   // Plugins
   "plugins/codemirror-javascript",
   "plugins/prettify"
+
 ],
 
-function(app, FauxtonAPI, Codemirror, JSHint) {
+function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
   var Views = {};
 
   Views.Tabs = FauxtonAPI.View.extend({
@@ -287,6 +290,7 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
       this.rows = {};
       this.viewList = !! options.viewList;
       this.params = options.params;
+      this.database = options.database;
       if (options.ddocInfo) {
         this.designDocs = options.ddocInfo.designDocs;
         this.ddocID = options.ddocInfo.id;
@@ -342,13 +346,26 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
       if (this.ddoc) {
         data.ddoc = this.ddoc;
         data.hasReduce = this.ddoc.viewHasReduce(this.collection.view);
+        this.view = this.collection.view;
       }
       return data;
     },
 
+    updateViewOnSave: function(ddoc, view) {
+      this.ddoc = ddoc;
+      this.view = view;
+      this.updateView();
+    },
+
     updateView: function(event) {
-      event.preventDefault();
-      var $form = $(event.currentTarget);
+      var $form;
+
+      if (event && event.preventDefault) { 
+        event.preventDefault();
+        $form = $(event.currentTarget);
+      } else {
+        $form = this.$('.view-query-update');
+      }
 
       // Ignore params without a value
       var params = _.filter($form.serializeArray(), function(param) {
@@ -395,7 +412,22 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
 
       var fragment = window.location.hash.replace(/\?.*$/, '');
       fragment = fragment + '?' + $.param(params);
-      FauxtonAPI.navigate(fragment);
+      FauxtonAPI.navigate(fragment, {trigger: false});
+
+      this.params = app.getParams();
+
+      this.collection = new Documents.IndexCollection(null, {
+        database: this.database,
+        design: this.ddoc.id.replace('_design/',''),
+        view: this.view,
+        params: this.params
+      });
+
+      var that = this;
+      FauxtonAPI.when(this.establish()).then(function () {
+        that.render();
+      });
+
     },
 
     updateFilters: function(event) {
@@ -471,10 +503,12 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
       this.setDdocInfo();
       if (this.viewList) {
         this.viewEditorView = this.insertView("#edit-index-container", new Views.ViewEditor({
-          model: this.ddoc,
+          model: this.ddoc.dDocModel(),
           ddocs: this.designDocs,
           viewCollection: this.collection
         }));
+
+        this.listenTo(this.viewEditorView, 'view_updated', this.updateViewOnSave);
       }
       this.collection.each(function(doc) {
         this.rows[doc.id] = this.insertView("table.all-docs tbody", new this.nestedView({
@@ -668,10 +702,9 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
     initialize: function(options) {
       this.newView = options.newView || false;
       this.ddocs = options.ddocs;
-      console.log('DDOC', this.ddocs);
       this.viewCollection = options.viewCollection;
       if (this.newView) {
-
+        //TODO: CREATE NEW HERE
       } else {
         this.reduceFunStr = this.model.viewHasReduce(this.viewCollection.view);
       } 
@@ -720,34 +753,45 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
     },
 
     saveView: function(event) {
-      var json, notification;
+      var json, notification,
+          that = this;
 
       event.preventDefault();
 
       if (this.hasValidCode()) {
         var mapVal = this.mapEditor.getValue(), 
-            reduceVal = this.reduceEditor.getValue(),
+            reduceVal = "",
             viewName = this.$('#index-name').val(),
             ddocName = this.$('#ddoc :selected').val();
 
+         var reduceOption = this.$('#reduce-function-selector :selected').val();
+
+         if (reduceOption === 'CUSTOM') {
+            reduceVal = this.reduceEditor.getValue();
+         } else if ( reduceOption !== 'NONE') {
+           reduceVal = reduceOption;
+         }
+
          var ddoc = this.ddocs.find(function (ddoc) {
            return ddoc.id === ddocName;
-         });
-         console.log('found ddoc', ddocName, ddoc);
-        /*
+         }).dDocModel();
+
         notification = FauxtonAPI.addNotification({
           msg: "Saving document.",
           selector: "#define-view .errors-container"
         });
-        */
+
         ddoc.setDdocView(viewName, mapVal, reduceVal);
-        FauxtonAPI.addNotification({
-          msg: "Save Functionality Coming Soon",
-          type: "warning",
-          selector: "#define-view .errors-container"
-        });
-        
-        ddoc.save().fail(function(xhr) {
+
+        ddoc.save().then(function () {
+          FauxtonAPI.addNotification({
+            msg: "View has been saved.",
+            type: "success",
+            selector: "#define-view .errors-container"
+          });
+
+          that.trigger('view_updated', ddoc, viewName);
+        }, function(xhr) {
           var responseText = JSON.parse(xhr.responseText).reason;
           notification = FauxtonAPI.addNotification({
             msg: "Save failed: " + responseText,
@@ -817,7 +861,6 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
 
     serialize: function() {
       return {
-        //database: this.model,
         ddocs: this.ddocs,
         ddoc: this.model,
         viewCollection: this.viewCollection,
@@ -846,7 +889,7 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
         matchBrackets: true,
         lineWrapping: true,
         onChange: function() {
-          that.runJSHint("mapEditor");
+          //that.runJSHint("mapEditor");
         },
         extraKeys: {
           "Ctrl-S": function(instance) { that.saveView(); },
@@ -859,7 +902,7 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
         matchBrackets: true,
         lineWrapping: true,
         onChange: function() {
-          that.runJSHint("reduceEditor");
+          //that.runJSHint("reduceEditor");
         },
         extraKeys: {
           "Ctrl-S": function(instance) { that.saveView(); },
@@ -946,7 +989,14 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
       }, this);
     },
 
+    afterRender: function () {
+      if (this.selectedTab) {
+        this.setSelectedTab(this.selectedTab);
+      }
+    },
+
     setSelectedTab: function (selectedTab) {
+      this.selectedTab = selectedTab;
       this.$('li').removeClass('active');
       this.$('#' + selectedTab).parent().addClass('active');
     }
@@ -959,9 +1009,7 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
     template: "templates/documents/changes",
 
     establish: function() {
-      return [
-        this.model.changes.fetch()
-      ];
+      return [ this.model.changes.fetch()];
     },
 
     serialize: function () {
@@ -973,6 +1021,6 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
 
   });
 
-
-  return Views;
+  Documents.Views = Views;
+  return Documents;
 });
