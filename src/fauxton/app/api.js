@@ -32,7 +32,8 @@ function(app, Fauxton) {
   // List of JSHINT errors to ignore
   // Gets around problem of anonymous functions not being a valid statement
   FauxtonAPI.excludedViewErrors = [
-    "Missing name in function declaration."
+    "Missing name in function declaration.",
+    "['{a}'] is better written in dot notation."
   ];
 
   FauxtonAPI.isIgnorableError = function(msg) {

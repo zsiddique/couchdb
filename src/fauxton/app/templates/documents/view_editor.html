@@ -19,7 +19,7 @@ the License.
         <i class="icon-wrench"></i> Edit Index
       </a>
     </div>
-    <div id="collapse-edit-index" class="accordion-body collapse">
+    <div id="collapse-edit-index" class="accordion-body">
       <div class="accordion-inner">
         <div id="define-view" class="ddoc-alert well">
           <div class="errors-container"></div>
@@ -38,7 +38,6 @@ the License.
                         <option><%= ddoc.id %></option>
                       <% } %>
                     <% }); %>
-                    <option selected="selected">_design/views101</option>
                   </optgroup>
                 </select>
               </div>
@@ -52,7 +51,11 @@ the License.
             <div class="control-group">
               <label class="control-label" for="map-function">Map function <a target="_couch_docs" href="http://docs.couchdb.org/en/latest/ddocs/#map-functions"><i class="icon-question-sign"></i></a></label>
               <div class="controls">
-                <textarea class="js-editor" id="map-function"><%= ddoc.get('doc').views[viewCollection.view].map %></textarea>
+                <% if (newView) { %>
+                  <textarea class="js-editor" id="map-function"><%= langTemplates.map %></textarea>
+                <% } else { %>
+                  <textarea class="js-editor" id="map-function"><%= ddoc.get('doc').views[viewCollection.view].map %></textarea>
+                <% } %>
               </div>
             </div>
             <div class="control-group">
@@ -71,7 +74,11 @@ the License.
             <div class="control-group reduce-function">
               <label class="control-label" for="reduce-function">Custom Reduce</label>
               <div class="controls">
-                <textarea class="js-editor" id="reduce-function"><%= ddoc.get('doc').views[viewCollection.view].reduce %></textarea>
+                <% if (newView) { %>
+                  <textarea class="js-editor" id="reduce-function"><%= langTemplates.reduce %></textarea>
+                <% } else { %>
+                  <textarea class="js-editor" id="reduce-function"><%= ddoc.get('doc').views[viewCollection.view].reduce %></textarea>
+                <% } %>
               </div>
             </div>
             <div class="control-group">

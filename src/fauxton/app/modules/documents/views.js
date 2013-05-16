@@ -666,10 +666,15 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
     defaultLang: "javascript",
 
     initialize: function(options) {
+      this.newView = options.newView || false;
       this.ddocs = options.ddocs;
+      console.log('DDOC', this.ddocs);
       this.viewCollection = options.viewCollection;
-      this.reduceFunStr = this.model.viewHasReduce(this.viewCollection.view);
-      this.newView = false;
+      if (this.newView) {
+
+      } else {
+        this.reduceFunStr = this.model.viewHasReduce(this.viewCollection.view);
+      } 
     },
 
     updateValues: function() {
@@ -700,6 +705,7 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
     },
 
     previewView: function(event) {
+      event.preventDefault();
       FauxtonAPI.addNotification({
         msg: "<strong>Warning!</strong> Preview executes the Map/Reduce functions in your browser, and may behave differently from CouchDB.",
         type: "warning",
@@ -715,22 +721,33 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
 
     saveView: function(event) {
       var json, notification;
+
+      event.preventDefault();
+
       if (this.hasValidCode()) {
-        var mapVal = this.mapEditor.getValue();
-        var reduceVal = this.reduceEditor.getValue();
+        var mapVal = this.mapEditor.getValue(), 
+            reduceVal = this.reduceEditor.getValue(),
+            viewName = this.$('#index-name').val(),
+            ddocName = this.$('#ddoc :selected').val();
+
+         var ddoc = this.ddocs.find(function (ddoc) {
+           return ddoc.id === ddocName;
+         });
+         console.log('found ddoc', ddocName, ddoc);
         /*
         notification = FauxtonAPI.addNotification({
           msg: "Saving document.",
           selector: "#define-view .errors-container"
         });
         */
+        ddoc.setDdocView(viewName, mapVal, reduceVal);
         FauxtonAPI.addNotification({
           msg: "Save Functionality Coming Soon",
           type: "warning",
           selector: "#define-view .errors-container"
         });
-        /*
-        this.model.save().error(function(xhr) {
+        
+        ddoc.save().fail(function(xhr) {
           var responseText = JSON.parse(xhr.responseText).reason;
           notification = FauxtonAPI.addNotification({
             msg: "Save failed: " + responseText,
@@ -738,10 +755,9 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
             clear: true
           });
         });
-        */
       } else {
         notification = FauxtonAPI.addNotification({
-          msg: "Please fix the JSON errors and try again.",
+          msg: "Please fix the Javascript errors and try again.",
           type: "error",
           selector: "#define-view .errors-container"
         });
@@ -765,7 +781,7 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
         } else {
           // By default CouchDB view functions don't pass lint
           return _.every(JSHINT.errors, function(error) {
-            return FauxtonAPI.isIgnorableError(error.reason);
+            return FauxtonAPI.isIgnorableError(error.raw);
           });
         }
       }, this);
@@ -807,7 +823,8 @@ function(app, FauxtonAPI, Codemirror, JSHint) {
         viewCollection: this.viewCollection,
         reduceFunStr: this.reduceFunStr,
         isCustomReduce: this.hasCustomReduce(),
-        newView: this.newView
+        newView: this.newView,
+        langTemplates: this.langTemplates.javascript
       };
     },
 

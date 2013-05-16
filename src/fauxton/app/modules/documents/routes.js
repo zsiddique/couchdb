@@ -272,10 +272,18 @@ function(app, FauxtonAPI, Documents, Databases) {
     },
 
     newViewEditor: function (event) {
-      // TODO: Get this working
+      this.data.indexedDocs = new Documents.IndexCollection(null, {
+        database: this.data.database
+      /*  design: ddoc,
+        view: view,
+        params: params*/
+      });
+
       this.setView("#dashboard-content", new Documents.Views.ViewEditor({
         model: this.data.database,
-        ddocs: this.data.designDocs
+        ddocs: this.data.designDocs,
+        viewCollection: this.data.indexedDocs,
+        newView: true
       }));
 
       this.sidebar.setSelectedTab('new-view');
