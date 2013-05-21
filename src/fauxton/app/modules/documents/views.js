@@ -279,17 +279,13 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
     template: "templates/documents/all_docs_list",
     events: {
       "click button.all": "selectAll",
-      "click button.bulk-delete": "bulkDelete",
-      "change form.view-query-update input": "updateFilters",
-      "change form.view-query-update select": "updateFilters",
-      "submit form.view-query-update": "updateView"
+      "click button.bulk-delete": "bulkDelete"
     },
 
     initialize: function(options){
       this.nestedView = options.nestedView || Views.Document;
       this.rows = {};
       this.viewList = !! options.viewList;
-      this.params = options.params;
       this.database = options.database;
       if (options.ddocInfo) {
         this.designDocs = options.ddocInfo.designDocs;
@@ -298,171 +294,22 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
     },
 
     establish: function() {
-      var deferreds = [
-        this.collection.fetch().error(function() {
-          // TODO: handle error requests that slip through
-          // This should just throw a notification, not break the page
-          console.log("ERROR: ", arguments);
-        })
-      ];
-      if (this.designDocs) {
-        deferreds.push(this.designDocs.fetch());
-      }
-      return deferreds;
+      return this.collection.fetch().error(function() {
+        // TODO: handle error requests that slip through
+        // This should just throw a notification, not break the page
+        console.log("ERROR: ", arguments);
+      });
     },
 
     selectAll: function(evt){
       $("input:checkbox").attr('checked', !$(evt.target).hasClass('active'));
     },
 
-    // TODO:: HACK::
-    // Hack to grab info about the ddoc and current view to determine whether
-    // or not the view has a reduce function so we can display the advanced
-    // options appropriately.
-    //
-    // NOTE: we have this here temporarily because we have to wait for the
-    // design docs to be present.
-    //
-    // NOTE: We should probably refactor this View out into a separate View
-    // dedicated to displaying view query results.
-    // If nothing else, we should at least switch to something along the lines
-    // of fetchOnce to ensure we're not reloading the ddocs here in addition to
-    // the sidebar.
-    setDdocInfo: function() {
-      if (!this.ddoc && this.designDocs) {
-        this.ddoc = this.designDocs.get(this.ddocID);
-      }
-    },
-
     serialize: function() {
-      this.setDdocInfo();
-      var data = {
+      return {
         database: this.collection,
-        viewList: this.viewList,
-        hasReduce: false,
-        params: this.params,
-        ddocs: this.designDocs
+        viewList: this.viewList
       };
-      if (this.ddoc) {
-        data.ddoc = this.ddoc;
-        data.hasReduce = this.ddoc.viewHasReduce(this.collection.view);
-        this.view = this.collection.view;
-      }
-      return data;
-    },
-
-    updateViewOnSave: function(ddoc, view) {
-      this.ddoc = ddoc;
-      this.view = view;
-      this.updateView();
-    },
-
-    updateView: function(event) {
-      var $form;
-
-      if (event && event.preventDefault) { 
-        event.preventDefault();
-        $form = $(event.currentTarget);
-      } else {
-        $form = this.$('.view-query-update');
-      }
-
-      // Ignore params without a value
-      var params = _.filter($form.serializeArray(), function(param) {
-        return param.value;
-      });
-
-      // Validate *key* params to ensure they're valid JSON
-      var keyParams = ["key","keys","startkey","endkey"];
-      var errorParams = _.filter(params, function(param) {
-        if (_.contains(keyParams, param.name)) {
-          try {
-            JSON.parse(param.value);
-            return false;
-          } catch(e) {
-            return true;
-          }
-        } else {
-          return false;
-        }
-      });
-
-      if (_.any(errorParams)) {
-        _.map(errorParams, function(param) {
-
-          // TODO: Where to add this error?
-          // bootstrap wants the error on a control-group div, but we're not using that
-          //$('form.view-query-update input[name='+param+'], form.view-query-update select[name='+param+']').addClass('error');
-
-          return FauxtonAPI.addNotification({
-            msg: "JSON Parse Error on field: "+param.name,
-            type: "error",
-            selector: ".view.show .all-docs-list.errors-container"
-          });
-        });
-
-        FauxtonAPI.addNotification({
-          msg: "Make sure that strings are properly quoted and any other values are valid JSON structures",
-          type: "warning",
-          selector: ".view.show .all-docs-list.errors-container"
-        });
-
-        return false;
-      }
-
-      var fragment = window.location.hash.replace(/\?.*$/, '');
-      fragment = fragment + '?' + $.param(params);
-      FauxtonAPI.navigate(fragment, {trigger: false});
-
-      this.params = app.getParams();
-
-      this.collection = new Documents.IndexCollection(null, {
-        database: this.database,
-        design: this.ddoc.id.replace('_design/',''),
-        view: this.view,
-        params: this.params
-      });
-
-      var that = this;
-      FauxtonAPI.when(this.establish()).then(function () {
-        that.render();
-      });
-
-    },
-
-    updateFilters: function(event) {
-      event.preventDefault();
-      var $ele = $(event.currentTarget);
-      var name = $ele.attr('name');
-      this.updateFiltersFor(name, $ele);
-    },
-
-    updateFiltersFor: function(name, $ele) {
-      var $form = $ele.parents("form.view-query-update:first");
-      switch (name) {
-        // Reduce constraints
-        //   - Can't include_docs for reduce=true
-        //   - can't include group_level for reduce=false
-        case "reduce":
-          if ($ele.prop('checked') === true) {
-            if ($form.find("input[name=include_docs]").prop("checked") === true) {
-              $form.find("input[name=include_docs]").prop("checked", false);
-              var notification = FauxtonAPI.addNotification({
-                msg: "include_docs has been disabled as you cannot include docs on a reduced view",
-                type: "warn",
-                selector: ".view.show .all-docs-list.errors-container"
-              });
-            }
-            $form.find("input[name=include_docs]").prop("disabled", true);
-            $form.find("select[name=group_level]").prop("disabled", false);
-          } else {
-            $form.find("select[name=group_level]").prop("disabled", true);
-            $form.find("input[name=include_docs]").prop("disabled", false);
-          }
-          break;
-        case "include_docs":
-          break;
-      }
     },
 
     /*
@@ -500,16 +347,6 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
     },
 
     beforeRender: function() {
-      this.setDdocInfo();
-      if (this.viewList) {
-        this.viewEditorView = this.insertView("#edit-index-container", new Views.ViewEditor({
-          model: this.ddoc.dDocModel(),
-          ddocs: this.designDocs,
-          viewCollection: this.collection
-        }));
-
-        this.listenTo(this.viewEditorView, 'view_updated', this.updateViewOnSave);
-      }
       this.collection.each(function(doc) {
         this.rows[doc.id] = this.insertView("table.all-docs tbody", new this.nestedView({
           model: doc
@@ -519,34 +356,6 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
 
     afterRender: function(){
       prettyPrint();
-      if (this.params) {
-        var $form = this.$el.find("form.view-query-update");
-        _.each(this.params, function(val, key) {
-          var $ele;
-          switch (key) {
-            case "limit":
-            case "group_level":
-              $form.find("select[name='"+key+"']").val(val);
-              break;
-            case "include_docs":
-            case "stale":
-            case "descending":
-            case "inclusive_end":
-              $form.find("input[name='"+key+"']").prop('checked', true);
-              break;
-            case "reduce":
-              $ele = $form.find("input[name='"+key+"']");
-              if (val == "true") {
-                $ele.prop('checked', true);
-              }
-              this.updateFiltersFor(key, $ele);
-              break;
-            default:
-              $form.find("input[name='"+key+"']").val(val);
-              break;
-          }
-        }, this);
-      }
     }
   });
 
@@ -680,6 +489,7 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
     }
   });
 
+  //TODO split this into two smaller views, one for advance query options and other for index editing
   Views.ViewEditor = FauxtonAPI.View.extend({
     template: "templates/documents/view_editor",
     builtinReduces: ['_sum', '_count', '_stats'],
@@ -687,7 +497,10 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
     events: {
       "click button.save": "saveView",
       "click button.preview": "previewView",
-      "change select#reduce-function-selector": "updateReduce"
+      "change select#reduce-function-selector": "updateReduce",
+      "change form.view-query-update input": "updateFilters",
+      "change form.view-query-update select": "updateFilters",
+      "submit form.view-query-update": "updateView"
     },
 
     langTemplates: {
@@ -702,11 +515,13 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
     initialize: function(options) {
       this.newView = options.newView || false;
       this.ddocs = options.ddocs;
+      this.ddocID = options.ddocInfo.id;
       this.viewCollection = options.viewCollection;
+      this.viewName = options.viewName;
+      this.params = options.params;
       if (this.newView) {
         //TODO: CREATE NEW HERE
       } else {
-        this.reduceFunStr = this.model.viewHasReduce(this.viewCollection.view);
       } 
     },
 
@@ -732,9 +547,94 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
       }
     },
 
-    establish: function() {
-      //return [this.ddocs.fetch(), this.model.fetch()];
-      return [];
+    updateView: function(event) {
+      var $form = $(event.currentTarget);
+
+      event.preventDefault();
+
+      // Ignore params without a value
+      var params = _.filter($form.serializeArray(), function(param) {
+        return param.value;
+      });
+
+      // Validate *key* params to ensure they're valid JSON
+      var keyParams = ["key","keys","startkey","endkey"];
+      var errorParams = _.filter(params, function(param) {
+        if (_.contains(keyParams, param.name)) {
+          try {
+            JSON.parse(param.value);
+            return false;
+          } catch(e) {
+            return true;
+          }
+        } else {
+          return false;
+        }
+      });
+
+      if (_.any(errorParams)) {
+        _.map(errorParams, function(param) {
+
+          // TODO: Where to add this error?
+          // bootstrap wants the error on a control-group div, but we're not using that
+          //$('form.view-query-update input[name='+param+'], form.view-query-update select[name='+param+']').addClass('error');
+
+          return FauxtonAPI.addNotification({
+            msg: "JSON Parse Error on field: "+param.name,
+            type: "error",
+            selector: ".view.show .all-docs-list.errors-container"
+          });
+        });
+
+        FauxtonAPI.addNotification({
+          msg: "Make sure that strings are properly quoted and any other values are valid JSON structures",
+          type: "warning",
+          selector: ".view.show .all-docs-list.errors-container"
+        });
+
+        return false;
+      }
+
+      var fragment = window.location.hash.replace(/\?.*$/, '');
+      fragment = fragment + '?' + $.param(params);
+      FauxtonAPI.navigate(fragment, {trigger: false});
+
+      FauxtonAPI.triggerRouteEvent('updateAllDocs', {ddoc: this.ddocID, view: this.viewName});
+    },
+
+    updateFilters: function(event) {
+      event.preventDefault();
+      var $ele = $(event.currentTarget);
+      var name = $ele.attr('name');
+      this.updateFiltersFor(name, $ele);
+    },
+
+    updateFiltersFor: function(name, $ele) {
+      var $form = $ele.parents("form.view-query-update:first");
+      switch (name) {
+        // Reduce constraints
+        //   - Can't include_docs for reduce=true
+        //   - can't include group_level for reduce=false
+        case "reduce":
+          if ($ele.prop('checked') === true) {
+            if ($form.find("input[name=include_docs]").prop("checked") === true) {
+              $form.find("input[name=include_docs]").prop("checked", false);
+              var notification = FauxtonAPI.addNotification({
+                msg: "include_docs has been disabled as you cannot include docs on a reduced view",
+                type: "warn",
+                selector: ".view.show .all-docs-list.errors-container"
+              });
+            }
+            $form.find("input[name=include_docs]").prop("disabled", true);
+            $form.find("select[name=group_level]").prop("disabled", false);
+          } else {
+            $form.find("select[name=group_level]").prop("disabled", true);
+            $form.find("input[name=include_docs]").prop("disabled", false);
+          }
+          break;
+        case "include_docs":
+          break;
+      }
     },
 
     previewView: function(event) {
@@ -761,10 +661,11 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
       if (this.hasValidCode()) {
         var mapVal = this.mapEditor.getValue(), 
             reduceVal = "",
-            viewName = this.$('#index-name').val(),
+            reduceOption = this.$('#reduce-function-selector :selected').val(),
+            viewName = this.$('#index-name').val();
             ddocName = this.$('#ddoc :selected').val();
 
-         var reduceOption = this.$('#reduce-function-selector :selected').val();
+         this.viewName = viewName;
 
          if (reduceOption === 'CUSTOM') {
             reduceVal = this.reduceEditor.getValue();
@@ -790,7 +691,8 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
             selector: "#define-view .errors-container"
           });
 
-          that.trigger('view_updated', ddoc, viewName);
+          FauxtonAPI.triggerRouteEvent('updateAllDocs', {ddoc: ddocName, view: viewName});
+
         }, function(xhr) {
           var responseText = JSON.parse(xhr.responseText).reason;
           notification = FauxtonAPI.addNotification({
@@ -865,6 +767,7 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
         ddoc: this.model,
         viewCollection: this.viewCollection,
         reduceFunStr: this.reduceFunStr,
+        hasReduce: this.reduceFunStr,
         isCustomReduce: this.hasCustomReduce(),
         newView: this.newView,
         langTemplates: this.langTemplates.javascript
@@ -873,6 +776,11 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
 
     hasCustomReduce: function() {
       return this.reduceFunStr && ! _.contains(this.builtinReduces, this.reduceFunStr);
+    },
+
+    beforeRender: function () {
+      this.model = this.ddocs.get(this.ddocID).dDocModel();
+      this.reduceFunStr = this.model.viewHasReduce(this.viewCollection.view);
     },
 
     afterRender: function() {
@@ -915,6 +823,36 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
       if ( ! this.hasCustomReduce()) {
         $(".control-group.reduce-function").hide();
       }
+
+       if (this.params) {
+        var $form = this.$el.find("form.view-query-update");
+        _.each(this.params, function(val, key) {
+          var $ele;
+          switch (key) {
+            case "limit":
+            case "group_level":
+              $form.find("select[name='"+key+"']").val(val);
+              break;
+            case "include_docs":
+            case "stale":
+            case "descending":
+            case "inclusive_end":
+              $form.find("input[name='"+key+"']").prop('checked', true);
+              break;
+            case "reduce":
+              $ele = $form.find("input[name='"+key+"']");
+              if (val == "true") {
+                $ele.prop('checked', true);
+              }
+              this.updateFiltersFor(key, $ele);
+              break;
+            default:
+              $form.find("input[name='"+key+"']").val(val);
+              break;
+          }
+        }, this);
+      }
+
     }
   });
 
@@ -928,14 +866,6 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
       if (options.ddocInfo) {
         this.ddocID = options.ddocInfo.id;
         this.currView = options.ddocInfo.currView;
-      }
-    },
-
-    establish: function() {
-      if (this.collection) {
-        return [this.collection.fetch()];
-      } else {
-        return null;
       }
     },
 

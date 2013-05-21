@@ -242,7 +242,7 @@ function(app, FauxtonAPI) {
     initialize: function(_models, options) {
       this.database = options.database;
       this.view = options.view;
-      this.design = options.design;
+      this.design = options.design.replace('_design/','');
       this.params = _.extend({limit: 10, reduce: false}, options.params);
       this.idxType = "_view";
     },

@@ -180,6 +180,10 @@ function(app, FauxtonAPI, Documents, Databases) {
       "database/:database/new_view": "newViewEditor"
     },
 
+    events: {
+      "route:updateAllDocs": "updateAllDocsFromView"
+    },
+
     initialize: function (route, masterLayout, options) {
       var docOptions = app.getParams();
       docOptions.include_docs = true;
@@ -207,6 +211,9 @@ function(app, FauxtonAPI, Documents, Databases) {
       }));
     },
 
+    establish: function () {
+      return this.data.designDocs.fetch();
+    },
 
     allDocs: function(databaseName, options) {
       var docOptions = app.getParams(options);
@@ -220,7 +227,10 @@ function(app, FauxtonAPI, Documents, Databases) {
         this.sidebar.setSelectedTab('all-docs');
       }
 
-      this.documentsView = this.setView("#dashboard-content", new Documents.Views.AllDocsList({
+      // TODO must be a better way
+      if (this.viewEditor) { this.viewEditor.remove(); }
+
+      this.documentsView = this.setView("#dashboard-lower-content", new Documents.Views.AllDocsList({
         collection: this.data.database.allDocs
       }));
 
@@ -250,13 +260,22 @@ function(app, FauxtonAPI, Documents, Databases) {
         designDocs: this.data.designDocs
       };
 
-      this.setView("#dashboard-content", new Documents.Views.AllDocsList({
+      this.viewEditor = this.setView("#dashboard-upper-content", new Documents.Views.ViewEditor({
+        model: this.data.database,
+        ddocs: this.data.designDocs,
+        viewCollection: this.data.indexedDocs,
+        viewName: view,
+        params: params,
+        newView: false,
+        ddocInfo: ddocInfo
+      }));
+
+      this.documentsView = this.setView("#dashboard-lower-content", new Documents.Views.AllDocsList({
         database: this.data.database,
         collection: this.data.indexedDocs,
         nestedView: Documents.Views.Row,
         viewList: true,
-        ddocInfo: ddocInfo,
-        params: params
+        ddocInfo: ddocInfo
       }));
 
       this.sidebar.setSelectedTab(ddoc + '_' + view);
@@ -288,6 +307,22 @@ function(app, FauxtonAPI, Documents, Databases) {
       }));
 
       this.sidebar.setSelectedTab('new-view');
+    },
+
+    updateAllDocsFromView: function (event) {
+      var view = event.view,
+          ddoc = event.ddoc;
+
+       console.log('updae', event);
+      this.data.indexedDocs = new Documents.IndexCollection(null, {
+        database: this.data.database,
+        design: ddoc,
+        view: view,
+        params: app.getParams()
+      });
+
+      this.documentsView.collection = this.data.indexedDocs;
+      this.documentsView.forceRender();
     }
   });
 
