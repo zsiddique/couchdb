@@ -16,6 +16,7 @@ define([
   "api",
  
   "modules/documents/resources",
+  "modules/pouchdb/base",
 
   // Libs
   "codemirror",
@@ -27,7 +28,7 @@ define([
 
 ],
 
-function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
+function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
   var Views = {};
 
   Views.Tabs = FauxtonAPI.View.extend({
@@ -294,7 +295,7 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
     },
 
     establish: function() {
-      return this.collection.fetch().error(function() {
+      return this.collection.fetch().fail(function() {
         // TODO: handle error requests that slip through
         // This should just throw a notification, not break the page
         console.log("ERROR: ", arguments);
@@ -389,7 +390,7 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
         this.model.clear({silent:true});
         this.model.set(json);
         notification = FauxtonAPI.addNotification({msg: "Saving document."});
-        this.model.save().error(function(xhr) {
+        this.model.save().fail(function(xhr) {
           var responseText = JSON.parse(xhr.responseText).reason;
           notification = FauxtonAPI.addNotification({
             msg: "Save failed: " + responseText,
@@ -519,6 +520,7 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
       this.viewCollection = options.viewCollection;
       this.viewName = options.viewName;
       this.params = options.params;
+      this.database = options.database;
       if (this.newView) {
         //TODO: CREATE NEW HERE
       } else {
@@ -547,11 +549,8 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
       }
     },
 
-    updateView: function(event) {
-      var $form = $(event.currentTarget);
-
-      event.preventDefault();
-
+    queryParams: function () {
+      var $form = $(".view-query-update");
       // Ignore params without a value
       var params = _.filter($form.serializeArray(), function(param) {
         return param.value;
@@ -571,6 +570,16 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
           return false;
         }
       });
+
+      return {params: params, errorParams: errorParams};
+    },
+
+    updateView: function(event) {
+      event.preventDefault();
+
+      var paramInfo = this.queryParams(),
+          errorParams = paramInfo.errorParams,
+          params = paramInfo.params;
 
       if (_.any(errorParams)) {
         _.map(errorParams, function(param) {
@@ -638,17 +647,42 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
     },
 
     previewView: function(event) {
+      var that = this,
+          mapVal = this.mapEditor.getValue(),
+          reduceVal = this.reduceVal(),
+          paramsArr = this.queryParams().params;
+
+      var params = _.reduce(paramsArr, function (params, param) {
+        params[param.name] = param.value;
+        return params;
+      }, {reduce: false});
+
       event.preventDefault();
+
       FauxtonAPI.addNotification({
         msg: "<strong>Warning!</strong> Preview executes the Map/Reduce functions in your browser, and may behave differently from CouchDB.",
         type: "warning",
         selector: "#define-view .errors-container",
-        fade: false
+        fade: true
       });
-      FauxtonAPI.addNotification({
-        msg: "Preview Functionality Coming Soon",
-        type: "warning",
-        selector: "#define-view .errors-container"
+     
+      var promise = FauxtonAPI.Deferred();
+
+      if (!this.database.allDocs) {
+        this.database.buildAllDocs({limit: "100", include_docs: true});
+        promise = this.database.allDocs.fetch();
+      } else {
+        promise.resolve();
+      }
+
+      promise.then(function () {
+        params.docs = that.database.allDocs.map(function (model) { return model.get('doc');}); 
+
+        var queryPromise = pouchdb.runViewQuery({map: mapVal, reduce: reduceVal}, params);
+          queryPromise.then(function (results) {
+            console.log('promise', arguments, results);
+            FauxtonAPI.triggerRouteEvent('updatePreviewDocs', {rows: results.rows, ddoc: that.ddocID, view: that.viewName});
+          });
       });
     },
 
@@ -661,18 +695,13 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
       if (this.hasValidCode()) {
         var mapVal = this.mapEditor.getValue(), 
             reduceVal = "",
-            reduceOption = this.$('#reduce-function-selector :selected').val(),
+            
             viewName = this.$('#index-name').val();
             ddocName = this.$('#ddoc :selected').val();
 
          this.viewName = viewName;
 
-         if (reduceOption === 'CUSTOM') {
-            reduceVal = this.reduceEditor.getValue();
-         } else if ( reduceOption !== 'NONE') {
-           reduceVal = reduceOption;
-         }
-
+         
          var ddoc = this.ddocs.find(function (ddoc) {
            return ddoc.id === ddocName;
          }).dDocModel();
@@ -715,6 +744,16 @@ function(app, FauxtonAPI, Documents, Codemirror, JSHint) {
     },
 
     reduceVal: function() {
+      var reduceOption = this.$('#reduce-function-selector :selected').val(),
+          reduceVal = "";
+
+      if (reduceOption === 'CUSTOM') {
+        reduceVal = this.reduceEditor.getValue();
+      } else if ( reduceOption !== 'NONE') {
+        reduceVal = reduceOption;
+      }
+      
+      return reduceVal;
     },
 
     hasValidCode: function() {

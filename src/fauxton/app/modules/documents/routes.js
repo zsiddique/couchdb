@@ -181,7 +181,8 @@ function(app, FauxtonAPI, Documents, Databases) {
     },
 
     events: {
-      "route:updateAllDocs": "updateAllDocsFromView"
+      "route:updateAllDocs": "updateAllDocsFromView",
+      "route:updatePreviewDocs": "updateAllDocsFromPreview"
     },
 
     initialize: function (route, masterLayout, options) {
@@ -219,6 +220,7 @@ function(app, FauxtonAPI, Documents, Databases) {
       var docOptions = app.getParams(options);
 
       docOptions.include_docs = true;
+      console.log('doc options', docOptions);
       this.data.database.buildAllDocs(docOptions);
 
       if (docOptions.startkey && docOptions.startkey.indexOf('_design') > -1) {
@@ -267,6 +269,7 @@ function(app, FauxtonAPI, Documents, Databases) {
         viewName: view,
         params: params,
         newView: false,
+        database: this.data.database,
         ddocInfo: ddocInfo
       }));
 
@@ -313,7 +316,6 @@ function(app, FauxtonAPI, Documents, Databases) {
       var view = event.view,
           ddoc = event.ddoc;
 
-       console.log('updae', event);
       this.data.indexedDocs = new Documents.IndexCollection(null, {
         database: this.data.database,
         design: ddoc,
@@ -321,6 +323,23 @@ function(app, FauxtonAPI, Documents, Databases) {
         params: app.getParams()
       });
 
+      this.documentsView.collection = this.data.indexedDocs;
+      this.documentsView.forceRender();
+    },
+
+    updateAllDocsFromPreview: function (event) {
+      var view = event.view,
+          rows = event.rows,
+          ddoc = event.ddoc;
+
+      this.data.indexedDocs = new Documents.PouchIndexCollection(null, {
+        database: this.data.database,
+        design: ddoc,
+        view: view,
+        rows: rows
+      });
+
+      console.log(this.data.indexedDocs);
       this.documentsView.collection = this.data.indexedDocs;
       this.documentsView.forceRender();
     }

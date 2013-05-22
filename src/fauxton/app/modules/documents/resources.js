@@ -289,6 +289,57 @@ function(app, FauxtonAPI) {
       return this.models;
     }
   });
+  
+  Documents.PouchIndexCollection = Backbone.Collection.extend({
+    model: Documents.ViewRow,
+
+    initialize: function(_models, options) {
+      this.database = options.database;
+      this.rows = options.rows;
+      this.view = options.view;
+      this.design = options.design.replace('_design/','');
+      this.params = _.extend({limit: 10, reduce: false}, options.params);
+      this.idxType = "_view";
+    },
+
+    url: function () {
+      return '';
+    },
+
+    fetch: function() {
+      console.log('fetching');
+      var deferred = FauxtonAPI.Deferred();
+      this.reset(this.rows, {silent: true});
+
+      this.viewMeta = {
+        total_rows: this.rows.length,
+        offest: 0,
+        update_seq: false
+      };
+
+      deferred.resolve();
+      return deferred;
+    },
+
+    totalRows: function() {
+      console.log('rows');
+      console.log(this);
+      return this.viewMeta.total_rows || "unknown";
+    },
+
+    updateSeq: function() {
+      return this.viewMeta.update_seq || false;
+    },
+
+    buildAllDocs: function(){
+      this.fetch();
+    },
+
+    allDocs: function(){
+      return this.models;
+    }
+  });
+
 
   return Documents;
 });
