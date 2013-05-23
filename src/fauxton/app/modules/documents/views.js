@@ -292,9 +292,12 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
         this.designDocs = options.ddocInfo.designDocs;
         this.ddocID = options.ddocInfo.id;
       }
+      this.newView = options.newView || false;
     },
 
     establish: function() {
+      if (this.newView) { return null; }
+
       return this.collection.fetch().fail(function() {
         // TODO: handle error requests that slip through
         // This should just throw a notification, not break the page
@@ -307,8 +310,18 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
     },
 
     serialize: function() {
+      var totalRows = 0,
+          updateSeq = false;
+
+      if (!this.newView) {
+        totalRows = this.collection.totalRows();
+        updateSeq = this.collection.updateSeq();
+      }
+
       return {
-        database: this.collection,
+        updateSeq: updateSeq,
+        totalRows: totalRows,
+        numModels: this.collection.models.length,
         viewList: this.viewList
       };
     },
@@ -498,6 +511,7 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
     events: {
       "click button.save": "saveView",
       "click button.preview": "previewView",
+      "click button.delete": "deleteView",
       "change select#reduce-function-selector": "updateReduce",
       "change form.view-query-update input": "updateFilters",
       "change form.view-query-update select": "updateFilters",
@@ -506,7 +520,7 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
 
     langTemplates: {
       "javascript": {
-        map: "function(doc) {\n  emit(null, doc);\n}",
+        map: "function(doc) {\n  emit(doc.id, 1);\n}",
         reduce: "function(keys, values, rereduce){\n  if (rereduce){\n    return sum(values);\n  } else {\n    return values.length;\n  }\n}"
       }
     },
@@ -516,14 +530,13 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
     initialize: function(options) {
       this.newView = options.newView || false;
       this.ddocs = options.ddocs;
-      this.ddocID = options.ddocInfo.id;
-      this.viewCollection = options.viewCollection;
-      this.viewName = options.viewName;
       this.params = options.params;
       this.database = options.database;
       if (this.newView) {
-        //TODO: CREATE NEW HERE
+        this.viewName = 'newView';
       } else {
+        this.ddocID = options.ddocInfo.id;
+        this.viewName = options.viewName;
       } 
     },
 
@@ -574,8 +587,37 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
       return {params: params, errorParams: errorParams};
     },
 
+    deleteView: function (event) {
+      event.preventDefault();
+
+      if (this.newView) { return alert('Cannot delete a new view.'); }
+      if (!confirm('Are you sure you want to delete this view?')) {return;}
+
+      
+      var that = this,
+          viewName = this.$('#index-name').val();
+          ddocName = this.$('#ddoc :selected').val(),
+          ddoc = this.ddocs.find(function (ddoc) {
+            return ddoc.id === ddocName;
+          }).dDocModel();
+
+       ddoc.removeDdocView(viewName);
+       ddoc.save().then(function () {
+         /*FauxtonAPI.addNotification({
+            msg: "View has been removed.",
+            type: "warning",
+            selector: "#define-view .errors-container",
+            fade: true
+          });*/
+
+         FauxtonAPI.navigate('/database/' + that.database.id + '/_all_docs?limit=100');
+       });
+    },
+
     updateView: function(event) {
       event.preventDefault();
+
+      if (this.newView) { return alert('Please save this new view before querying it.'); }
 
       var paramInfo = this.queryParams(),
           errorParams = paramInfo.errorParams,
@@ -694,8 +736,7 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
 
       if (this.hasValidCode()) {
         var mapVal = this.mapEditor.getValue(), 
-            reduceVal = "",
-            
+            reduceVal = this.reduceVal(),
             viewName = this.$('#index-name').val();
             ddocName = this.$('#ddoc :selected').val();
 
@@ -719,6 +760,14 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
             type: "success",
             selector: "#define-view .errors-container"
           });
+
+          if (that.newView) {
+            var fragment = window.location.hash.replace(/\?.*$/, '');
+            fragment = '/database/' + that.database.id +'/' + ddocName + '/_view/' + viewName; 
+            console.log('nav', fragment);
+            FauxtonAPI.navigate(fragment, {trigger: false});
+            that.newView = false;
+          }
 
           FauxtonAPI.triggerRouteEvent('updateAllDocs', {ddoc: ddocName, view: viewName});
 
@@ -804,7 +853,8 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
       return {
         ddocs: this.ddocs,
         ddoc: this.model,
-        viewCollection: this.viewCollection,
+        ddocName: this.model.id,
+        viewName: this.viewName,
         reduceFunStr: this.reduceFunStr,
         hasReduce: this.reduceFunStr,
         isCustomReduce: this.hasCustomReduce(),
@@ -818,8 +868,15 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
     },
 
     beforeRender: function () {
-      this.model = this.ddocs.get(this.ddocID).dDocModel();
-      this.reduceFunStr = this.model.viewHasReduce(this.viewCollection.view);
+      if (this.newView) {
+        this.reduceFunStr = '_sum';
+       this.model = this.ddocs.first().dDocModel();
+       this.ddocID = this.model.id;
+       console.log('model', this.model);
+      } else {
+        this.model = this.ddocs.get(this.ddocID).dDocModel();
+        this.reduceFunStr = this.model.viewHasReduce(this.viewName);
+      }
     },
 
     afterRender: function() {

@@ -19,10 +19,10 @@ the License.
       <div class="accordion-group">
         <div class="accordion-heading">
           <a class="accordion-toggle" data-bypass="true" data-toggle="collapse" data-parent="#edit-index-accordion" href="#collapse-edit-index">
-            <i class="icon-wrench"></i> Edit Index
+            <i class="icon-wrench"></i> <% if (newView) { %> Create Index <% } else { %> Edit Index <% } %>
           </a>
         </div>
-        <div id="collapse-edit-index" class="accordion-body collapse">
+        <div id="collapse-edit-index" class="accordion-body <% if (!newView) { %> collapse <% } %>">
           <div class="accordion-inner">
             <div id="define-view" class="ddoc-alert well">
               <div class="errors-container"></div>
@@ -35,7 +35,7 @@ the License.
                       <optgroup label="Select a document">
                         <option>New document</option>
                         <% ddocs.each(function(ddoc) { %>
-                        <% if (ddoc.id == "_design/"+viewCollection.design) { %>
+                        <% if (ddoc.id === ddocName) { %>
                         <option selected="selected"><%= ddoc.id %></option>
                         <% } else { %>
                         <option><%= ddoc.id %></option>
@@ -48,7 +48,7 @@ the License.
                 <div class="control-group">
                   <label class="control-label" for="index-name">Index name <a target="_couch_docs" href="http://docs.couchdb.org/en/latest/ddocs/#view-functions"><i class="icon-question-sign"></i></a></label>
                   <div class="controls">
-                    <input type="text" id="index-name" value="<%= viewCollection.view %>" placeholder="Index name" />
+                    <input type="text" id="index-name" value="<%= viewName %>" placeholder="Index name" />
                   </div>
                 </div>
                 <div class="control-group">
@@ -57,7 +57,7 @@ the License.
                     <% if (newView) { %>
                     <textarea class="js-editor" id="map-function"><%= langTemplates.map %></textarea>
                     <% } else { %>
-                    <textarea class="js-editor" id="map-function"><%= ddoc.get('views')[viewCollection.view].map %></textarea>
+                    <textarea class="js-editor" id="map-function"><%= ddoc.get('views')[viewName].map %></textarea>
                     <% } %>
                   </div>
                 </div>
@@ -80,14 +80,16 @@ the License.
                     <% if (newView) { %>
                     <textarea class="js-editor" id="reduce-function"><%= langTemplates.reduce %></textarea>
                     <% } else { %>
-                    <textarea class="js-editor" id="reduce-function"><%= ddoc.get('views')[viewCollection.view].reduce %></textarea>
+                    <textarea class="js-editor" id="reduce-function"><%= ddoc.get('views')[viewName].reduce %></textarea>
                     <% } %>
                   </div>
                 </div>
                 <div class="control-group">
                   <hr />
                   <div class="controls">
-                    <button class="btn btn-small btn-inverse cancel">Cancel</button>
+                    <% if (!this.newView) { %>
+                    <button class="btn btn-small btn-danger delete">Delete</button>
+                    <% } %>
                     <button class="btn btn-small btn-info preview">Preview</button>
                     <button class="btn btn-primary save">Save</button>
                   </div>

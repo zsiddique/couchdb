@@ -78,96 +78,6 @@ function(app, FauxtonAPI, Documents, Databases) {
     }
   });
 
-  /*var newViewEditorCallback = function(databaseName) {
-    var data = {
-      database: new Databases.Model({id:databaseName})
-    };
-    data.designDocs = new Documents.AllDocs(null, {
-      database: data.database,
-      params: {startkey: '"_design"',
-        endkey: '"_design1"',
-        include_docs: true}
-    });
-
-    return {
-      layout: "with_tabs_sidebar",
-
-      data: data,
-
-      crumbs: [
-        {"name": "Databases", "link": "/_all_dbs"},
-        {"name": data.database.id, "link": data.database.url('app')}
-      ],
-
-      views: {
-        "#sidebar-content": new Documents.Views.Sidebar({
-          collection: data.designDocs
-        }),
-
-        "#tabs": new Documents.Views.Tabs({
-          collection: data.designDocs,
-          database: data.database
-        }),
-
-        "#dashboard-content": new Documents.Views.ViewEditor({
-          model: data.database,
-          ddocs: data.designDocs
-        })
-      },
-
-      apiUrl: data.database.url()
-    };
-  };*/
-
-  // HACK: this kind of works
-  // Basically need a way to share state between different routes, for
-  // instance making a new doc won't work for switching back and forth
-  // between code and field editors
-  /*var newDocCodeEditorCallback = function(databaseName) {
-    var data = {
-      database: new Databases.Model({id:databaseName}),
-      doc: new Documents.NewDoc(),
-      selected: "code_editor"
-    };
-    data.doc.database = data.database;
-    data.designDocs = new Documents.AllDocs(null, {
-      database: data.database,
-      params: {startkey: '"_design"',
-        endkey: '"_design1"',
-        include_docs: true}
-    });
-
-    var options = app.getParams();
-    options.include_docs = true;
-    data.database.buildAllDocs(options);
-
-    return {
-      layout: "one_pane",
-
-      data: data,
-
-      crumbs: [
-        {"name": "Databases", "link": "/_all_dbs"},
-        {"name": data.database.id, "link": Databases.databaseUrl(data.database)},
-        {"name": "new", "link": "#"}
-      ],
-
-      views: {
-        "#dashboard-content": new Documents.Views.Doc({
-          model: data.doc
-        }),
-
-        "#tabs": new Documents.Views.FieldEditorTabs({
-          selected: data.selected,
-          model: data.doc
-        })
-      },
-
-      apiUrl: data.doc.url()
-    };
-  };*/
-
-
   var DocumentsRouteObject = FauxtonAPI.RouteObject.extend({
     layout: "with_tabs_sidebar",
 
@@ -229,7 +139,6 @@ function(app, FauxtonAPI, Documents, Databases) {
         this.sidebar.setSelectedTab('all-docs');
       }
 
-      // TODO must be a better way
       if (this.viewEditor) { this.viewEditor.remove(); }
 
       this.documentsView = this.setView("#dashboard-lower-content", new Documents.Views.AllDocsList({
@@ -265,7 +174,6 @@ function(app, FauxtonAPI, Documents, Databases) {
       this.viewEditor = this.setView("#dashboard-upper-content", new Documents.Views.ViewEditor({
         model: this.data.database,
         ddocs: this.data.designDocs,
-        viewCollection: this.data.indexedDocs,
         viewName: view,
         params: params,
         newView: false,
@@ -294,18 +202,13 @@ function(app, FauxtonAPI, Documents, Databases) {
       this.apiUrl = this.data.indexedDocs.url();
     },
 
-    newViewEditor: function (event) {
-      this.data.indexedDocs = new Documents.IndexCollection(null, {
-        database: this.data.database
-      /*  design: ddoc,
-        view: view,
-        params: params*/
-      });
+    newViewEditor: function () {
+      var params = app.getParams();
 
-      this.setView("#dashboard-content", new Documents.Views.ViewEditor({
-        model: this.data.database,
+      this.viewEditor = this.setView("#dashboard-upper-content", new Documents.Views.ViewEditor({
         ddocs: this.data.designDocs,
-        viewCollection: this.data.indexedDocs,
+        params: params,
+        database: this.data.database,
         newView: true
       }));
 
@@ -323,8 +226,12 @@ function(app, FauxtonAPI, Documents, Databases) {
         params: app.getParams()
       });
 
-      this.documentsView.collection = this.data.indexedDocs;
-      this.documentsView.forceRender();
+      this.documentsView = this.setView("#dashboard-lower-content", new Documents.Views.AllDocsList({
+        database: this.data.database,
+        collection: this.data.indexedDocs,
+        nestedView: Documents.Views.Row,
+        viewList: true
+      }));
     },
 
     updateAllDocsFromPreview: function (event) {
@@ -339,9 +246,12 @@ function(app, FauxtonAPI, Documents, Databases) {
         rows: rows
       });
 
-      console.log(this.data.indexedDocs);
-      this.documentsView.collection = this.data.indexedDocs;
-      this.documentsView.forceRender();
+      this.documentsView = this.setView("#dashboard-lower-content", new Documents.Views.AllDocsList({
+        database: this.data.database,
+        collection: this.data.indexedDocs,
+        nestedView: Documents.Views.Row,
+        viewList: true
+      }));
     }
   });
 

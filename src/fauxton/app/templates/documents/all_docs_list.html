@@ -29,9 +29,9 @@ the License.
   <% } %>
 
   <p>
-    Showing 1-<%= database.models.length %> of <%= database.totalRows() %> rows
-    <% if (database.updateSeq()) { %>
-      -- Update Sequence: <%= database.updateSeq() %>
+    Showing 1-<%= numModels %> of <%= totalRows %> rows
+    <% if (updateSeq) { %>
+      -- Update Sequence: <%= updateSeq %>
     <% } %>
   </p>
   <table class="all-docs table table-striped table-condensed">

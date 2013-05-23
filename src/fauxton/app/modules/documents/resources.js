@@ -96,6 +96,14 @@ function(app, FauxtonAPI) {
       return true;
     },
 
+    removeDdocView: function (viewName) {
+      if (!this.isDdoc()) return false;
+      var views = this.get('views');
+
+      delete views[viewName];
+      this.set({views: views});
+    },
+
     dDocModel: function () {
       if (!this.isDdoc()) return false;
       var doc = this.get('doc');
@@ -241,10 +249,10 @@ function(app, FauxtonAPI) {
 
     initialize: function(_models, options) {
       this.database = options.database;
-      this.view = options.view;
-      this.design = options.design.replace('_design/','');
       this.params = _.extend({limit: 10, reduce: false}, options.params);
       this.idxType = "_view";
+      this.view = options.view;
+      this.design = options.design.replace('_design/','');
     },
 
     url: function() {
@@ -307,7 +315,6 @@ function(app, FauxtonAPI) {
     },
 
     fetch: function() {
-      console.log('fetching');
       var deferred = FauxtonAPI.Deferred();
       this.reset(this.rows, {silent: true});
 
