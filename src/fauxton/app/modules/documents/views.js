@@ -11,20 +11,20 @@
 // the License.
 
 define([
-  "app",
+       "app",
 
-  "api",
- 
-  "modules/documents/resources",
-  "modules/pouchdb/base",
+       "api",
 
-  // Libs
-  "codemirror",
-  "jshint",
+       "modules/documents/resources",
+       "modules/pouchdb/base",
 
-  // Plugins
-  "plugins/codemirror-javascript",
-  "plugins/prettify"
+       // Libs
+       "codemirror",
+       "jshint",
+
+       // Plugins
+       "plugins/codemirror-javascript",
+       "plugins/prettify"
 
 ],
 
@@ -311,7 +311,7 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
 
     serialize: function() {
       var totalRows = 0,
-          updateSeq = false;
+      updateSeq = false;
 
       if (!this.newView) {
         totalRows = this.collection.totalRows();
@@ -380,6 +380,10 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
       "click button.save-doc": "saveDoc"
     },
 
+    initialize: function (options) {
+      this.database = options.database;
+    },
+
     updateValues: function() {
       var notification;
       if (this.model.changedAttributes()) {
@@ -397,13 +401,15 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
     },
 
     saveDoc: function(event) {
-      var json, notification;
+      var json, notification, that = this;
       if (this.hasValidCode()) {
         json = JSON.parse(this.editor.getValue());
         this.model.clear({silent:true});
         this.model.set(json);
         notification = FauxtonAPI.addNotification({msg: "Saving document."});
-        this.model.save().fail(function(xhr) {
+        this.model.save().then(function () {
+          FauxtonAPI.navigate('/database/' + that.database.id + '/' + that.model.id);
+        }).fail(function(xhr) {
           var responseText = JSON.parse(xhr.responseText).reason;
           notification = FauxtonAPI.addNotification({
             msg: "Save failed: " + responseText,
@@ -464,7 +470,8 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
         matchBrackets: true,
         lineWrapping: true,
         onChange: function() {
-          that.runJSHint();
+          //throwing errors at the moment
+          //that.runJSHint();
         },
         extraKeys: {
           "Ctrl-S": function(instance) { that.saveDoc(); },
@@ -515,6 +522,7 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
       "change select#reduce-function-selector": "updateReduce",
       "change form.view-query-update input": "updateFilters",
       "change form.view-query-update select": "updateFilters",
+      "change select#ddoc": "updateDesignDoc",
       "submit form.view-query-update": "updateView"
     },
 
@@ -538,6 +546,17 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
         this.ddocID = options.ddocInfo.id;
         this.viewName = options.viewName;
       } 
+    },
+
+    updateDesignDoc: function () {
+
+      if (this.$('#ddoc :selected').prop('id') === 'new-doc') {
+        this.$('#new-ddoc-section').show();
+
+      } else {
+        this.$('#new-ddoc-section').hide();
+      }
+
     },
 
     updateValues: function() {
@@ -593,25 +612,24 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
       if (this.newView) { return alert('Cannot delete a new view.'); }
       if (!confirm('Are you sure you want to delete this view?')) {return;}
 
-      
       var that = this,
+          promise,
           viewName = this.$('#index-name').val();
           ddocName = this.$('#ddoc :selected').val(),
-          ddoc = this.ddocs.find(function (ddoc) {
-            return ddoc.id === ddocName;
-          }).dDocModel();
+          ddoc = this.getCurrentDesignDoc();
 
-       ddoc.removeDdocView(viewName);
-       ddoc.save().then(function () {
-         /*FauxtonAPI.addNotification({
-            msg: "View has been removed.",
-            type: "warning",
-            selector: "#define-view .errors-container",
-            fade: true
-          });*/
+      ddoc.removeDdocView(viewName);
 
-         FauxtonAPI.navigate('/database/' + that.database.id + '/_all_docs?limit=100');
-       });
+      if (ddoc.hasViews()) {
+        promise = ddoc.save(); 
+      } else {
+        promise = ddoc.destroy();
+      }
+
+      promise.then(function () {
+        FauxtonAPI.navigate('/database/' + that.database.id + '/_all_docs?limit=100');
+        FauxtonAPI.triggerRouteEvent('reloadDesignDocs');
+      });
     },
 
     updateView: function(event) {
@@ -668,21 +686,21 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
         //   - can't include group_level for reduce=false
         case "reduce":
           if ($ele.prop('checked') === true) {
-            if ($form.find("input[name=include_docs]").prop("checked") === true) {
-              $form.find("input[name=include_docs]").prop("checked", false);
-              var notification = FauxtonAPI.addNotification({
-                msg: "include_docs has been disabled as you cannot include docs on a reduced view",
-                type: "warn",
-                selector: ".view.show .all-docs-list.errors-container"
-              });
-            }
-            $form.find("input[name=include_docs]").prop("disabled", true);
-            $form.find("select[name=group_level]").prop("disabled", false);
-          } else {
-            $form.find("select[name=group_level]").prop("disabled", true);
-            $form.find("input[name=include_docs]").prop("disabled", false);
+          if ($form.find("input[name=include_docs]").prop("checked") === true) {
+            $form.find("input[name=include_docs]").prop("checked", false);
+            var notification = FauxtonAPI.addNotification({
+              msg: "include_docs has been disabled as you cannot include docs on a reduced view",
+              type: "warn",
+              selector: ".view.show .all-docs-list.errors-container"
+            });
           }
-          break;
+          $form.find("input[name=include_docs]").prop("disabled", true);
+          $form.find("select[name=group_level]").prop("disabled", false);
+        } else {
+          $form.find("select[name=group_level]").prop("disabled", true);
+          $form.find("input[name=include_docs]").prop("disabled", false);
+        }
+        break;
         case "include_docs":
           break;
       }
@@ -707,7 +725,7 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
         selector: "#define-view .errors-container",
         fade: true
       });
-     
+
       var promise = FauxtonAPI.Deferred();
 
       if (!this.database.allDocs) {
@@ -721,31 +739,26 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
         params.docs = that.database.allDocs.map(function (model) { return model.get('doc');}); 
 
         var queryPromise = pouchdb.runViewQuery({map: mapVal, reduce: reduceVal}, params);
-          queryPromise.then(function (results) {
-            console.log('promise', arguments, results);
-            FauxtonAPI.triggerRouteEvent('updatePreviewDocs', {rows: results.rows, ddoc: that.ddocID, view: that.viewName});
-          });
+        queryPromise.then(function (results) {
+          FauxtonAPI.triggerRouteEvent('updatePreviewDocs', {rows: results.rows, ddoc: that.getCurrentDesignDoc().id, view: that.viewName});
+        });
       });
     },
 
     saveView: function(event) {
       var json, notification,
-          that = this;
+      that = this;
 
       event.preventDefault();
 
       if (this.hasValidCode()) {
         var mapVal = this.mapEditor.getValue(), 
             reduceVal = this.reduceVal(),
-            viewName = this.$('#index-name').val();
-            ddocName = this.$('#ddoc :selected').val();
+            viewName = this.$('#index-name').val(),
+            ddoc = this.getCurrentDesignDoc(),
+            ddocName = ddoc.id;
 
-         this.viewName = viewName;
-
-         
-         var ddoc = this.ddocs.find(function (ddoc) {
-           return ddoc.id === ddocName;
-         }).dDocModel();
+        this.viewName = viewName;
 
         notification = FauxtonAPI.addNotification({
           msg: "Saving document.",
@@ -762,10 +775,11 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
           });
 
           if (that.newView) {
-            var fragment = window.location.hash.replace(/\?.*$/, '');
-            fragment = '/database/' + that.database.id +'/' + ddocName + '/_view/' + viewName; 
-            console.log('nav', fragment);
+            var fragment = '/database/' + that.database.id +'/' + ddocName + '/_view/' + viewName; 
+
             FauxtonAPI.navigate(fragment, {trigger: false});
+            FauxtonAPI.triggerRouteEvent('reloadDesignDocs',{selectedTab: ddocName.replace('_design/','') + '_' + viewName});
+
             that.newView = false;
           }
 
@@ -788,20 +802,41 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
       }
     },
 
+    getCurrentDesignDoc: function () {
+      if (this.newDesignDoc()) {
+        var doc = {
+          _id: '_design/' + this.$('#new-ddoc').val(),
+          views: {},
+          language: "javascript"
+        };
+        return new Documents.Doc(doc, {database: this.database});
+      } else {
+        var ddocName = this.$('#ddoc').val();
+        return this.ddocs.find(function (ddoc) {
+          return ddoc.id === ddocName;
+        }).dDocModel();
+      }
+
+    },
+
+    newDesignDoc: function () {
+      return this.$('#ddoc :selected').prop('id') === 'new-doc';
+    },
+
     isCustomReduceEnabled: function() {
       return $("#reduce-function-selector").val() == "CUSTOM";
     },
 
     reduceVal: function() {
       var reduceOption = this.$('#reduce-function-selector :selected').val(),
-          reduceVal = "";
+      reduceVal = "";
 
       if (reduceOption === 'CUSTOM') {
         reduceVal = this.reduceEditor.getValue();
       } else if ( reduceOption !== 'NONE') {
         reduceVal = reduceOption;
       }
-      
+
       return reduceVal;
     },
 
@@ -868,11 +903,15 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
     },
 
     beforeRender: function () {
+
       if (this.newView) {
         this.reduceFunStr = '_sum';
-       this.model = this.ddocs.first().dDocModel();
-       this.ddocID = this.model.id;
-       console.log('model', this.model);
+        if (this.ddocs.length === 0) {
+          this.model = new Documents.Doc(null, {database: this.database});
+        } else {
+          this.model = this.ddocs.first().dDocModel();
+        }
+        this.ddocID = this.model.id;
       } else {
         this.model = this.ddocs.get(this.ddocID).dDocModel();
         this.reduceFunStr = this.model.viewHasReduce(this.viewName);
@@ -887,6 +926,9 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
         mapFun.val(this.langTemplates[this.defaultLang].map);
         reduceFun.val(this.langTemplates[this.defaultLang].reduce);
       }
+
+      this.updateDesignDoc();
+
       this.mapEditor = Codemirror.fromTextArea(mapFun.get()[0], {
         mode: "javascript",
         lineNumbers: true,
@@ -920,31 +962,31 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
         $(".control-group.reduce-function").hide();
       }
 
-       if (this.params) {
+      if (this.params) {
         var $form = this.$el.find("form.view-query-update");
         _.each(this.params, function(val, key) {
           var $ele;
           switch (key) {
             case "limit":
-            case "group_level":
+              case "group_level":
               $form.find("select[name='"+key+"']").val(val);
-              break;
+            break;
             case "include_docs":
-            case "stale":
-            case "descending":
-            case "inclusive_end":
+              case "stale":
+              case "descending":
+              case "inclusive_end":
               $form.find("input[name='"+key+"']").prop('checked', true);
-              break;
+            break;
             case "reduce":
               $ele = $form.find("input[name='"+key+"']");
-              if (val == "true") {
-                $ele.prop('checked', true);
-              }
-              this.updateFiltersFor(key, $ele);
-              break;
+            if (val == "true") {
+              $ele.prop('checked', true);
+            }
+            this.updateFiltersFor(key, $ele);
+            break;
             default:
               $form.find("input[name='"+key+"']").val(val);
-              break;
+            break;
           }
         }, this);
       }
@@ -1039,11 +1081,17 @@ function(app, FauxtonAPI, Documents, pouchdb, Codemirror, JSHint) {
     },
 
     serialize: function () {
+      console.log('c', this.model.changes.toJSON());
       return {
         changes: this.model.changes.toJSON(),
         database: this.model
       };
+    },
+
+    afterRender: function(){
+      prettyPrint();
     }
+
 
   });
 

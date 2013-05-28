@@ -109,6 +109,7 @@ function(app, FauxtonAPI) {
       var doc = this.get('doc');
 
       if (doc) {
+        console.log('DOC', doc);
         return new Documents.Doc(doc, {database: this.database});
       } 
 

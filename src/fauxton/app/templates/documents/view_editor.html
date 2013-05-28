@@ -29,20 +29,30 @@ the License.
               <form class="form-horizontal">
                 <h3>Define your index</h3>
                 <div class="control-group">
-                  <label class="control-label" for="ddoc">Design document <a target="_couch_docs" href="http://docs.couchdb.org/en/latest/ddocs/#design-docs"><i class="icon-question-sign"></i></a></label>
-                  <div class="controls">
-                    <select id="ddoc">
-                      <optgroup label="Select a document">
-                        <option>New document</option>
-                        <% ddocs.each(function(ddoc) { %>
-                        <% if (ddoc.id === ddocName) { %>
-                        <option selected="selected"><%= ddoc.id %></option>
-                        <% } else { %>
-                        <option><%= ddoc.id %></option>
-                        <% } %>
-                        <% }); %>
-                      </optgroup>
-                    </select>
+                  <div class="row" style="margin-left:10px">
+                    <div class="span3">
+                      <label class="control-label" for="ddoc">Design document <a target="_couch_docs" href="http://docs.couchdb.org/en/latest/ddocs/#design-docs"><i class="icon-question-sign"></i></a></label>
+                      <div class="controls">
+                        <select id="ddoc">
+                          <optgroup label="Select a document">
+                            <option id="new-doc">New document</option>
+                            <% ddocs.each(function(ddoc) { %>
+                            <% if (ddoc.id === ddocName) { %>
+                            <option selected="selected"><%= ddoc.id %></option>
+                            <% } else { %>
+                            <option><%= ddoc.id %></option>
+                            <% } %>
+                            <% }); %>
+                          </optgroup>
+                        </select>
+                      </div>
+                    </div>
+                    <div id="new-ddoc-section" class="span5" style="display:none">
+                      <label class="control-label" for="new-ddoc"> _design/ </label>
+                      <div class="controls">
+                        <input type="text" id="new-ddoc" placeholder="newDesignDoc">
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div class="control-group">
