@@ -73,3 +73,7 @@ This product also includes the following third-party components:
  * Underscore.js 1.4.2 (http://underscorejs.org)
 
    Copyright 2012, Jeremy Ashkenas
+
+ * Erlang/OTP pmod parse-transfrom library
+
+   Copyright, 2013, ERLANG PUBLIC LICENSE Version 1.1

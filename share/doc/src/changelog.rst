@@ -63,6 +63,8 @@ Miscellaneous
 
 * Improve documentation: better structure, improve language, less duplication.
 * Improvements to test suite.
+* :issue`1696`: Add support for Erlang R16B through pmod-transform library.
+  :commit:`50e5b1e`
 
 Version 1.3.0
 -------------

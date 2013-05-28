@@ -24,6 +24,7 @@ Misc:
 
  * Improve documentation: better structure, improve language, less duplication.
  * Improvements to test suite and VPATH build system.
+ * Add support for Erlang R16B through pmod-transform library.
 
 Version 1.3.0
 -------------

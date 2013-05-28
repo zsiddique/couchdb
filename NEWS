@@ -14,7 +14,8 @@ Version 1.3.1
  * Don't log about missing .compact files.
  * Fix bug in WARN level logging from 1.3.0.
  * Improve documentation: better structure, improve language, less duplication.
- * Improvements to test suite.
+ * Improvements to test suite and build system.
+ * Add support for Erlang R16B through pmod-transform library.
 
 Version 1.3.0
 -------------
