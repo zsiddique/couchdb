@@ -238,8 +238,18 @@ module.exports = function(grunt) {
 
     // The headless Jasmine testing is provided by grunt-jasmine-task. Simply
     // point the configuration to your test directory.
+    // jasmine: {
+    //   all: ["test/jasmine/*.html"]
+    //},
+
     jasmine: {
-      all: ["test/jasmine/*.html"]
+      fauxton: {
+        //src: 'app/**/*.js',
+        options: {
+          specs: 'test/jasmine/spec/*.js'
+          //helpers: 'spec/*Helper.js'
+        }
+      }
     },
 
     // Copy build artifacts and library code into the distribution
@@ -311,6 +321,8 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   // Load CSSMin task
   grunt.loadNpmTasks('grunt-contrib-cssmin');
+  // Load Jasmine task
+  grunt.loadNpmTasks('grunt-contrib-jasmine');
 
   /*
    * Default task
