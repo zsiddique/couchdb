@@ -1198,6 +1198,8 @@ validate_attachment_name(Name) when is_list(Name) ->
     validate_attachment_name(list_to_binary(Name));
 validate_attachment_name(<<"_",_/binary>>) ->
     throw({bad_request, <<"Attachment name can't start with '_'">>});
+validate_attachment_name(<<"">>) ->
+    throw({bad_request, <<"Attachment name can't be empty">>});
 validate_attachment_name(Name) ->
     case couch_util:validate_utf8(Name) of
         true -> Name;

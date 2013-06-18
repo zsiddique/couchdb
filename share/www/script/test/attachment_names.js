@@ -48,6 +48,25 @@ couchTests.attachment_names = function(debug) {
   resp = db.save(binAttDoc);
   TEquals(true, resp.ok, "attachment_name: inline attachment");
 
+  // COUCHDB-1832 Inline Attachment API allows empty names
+  var binAttDoc4 = {
+    _id: "bin_doc4",
+    _attachments:{
+      "": {
+        content_type:"text/plain",
+        data: "VGhpcyBpcyBhIGJhc2U2NCBlbmNvZGVkIHRleHQ="
+      }
+    }
+  };
+
+  try {
+    resp = db.save(binAttDoc4);
+    TEquals(1,2, "should throw on empty attachment names");
+  } catch (e) {
+    TEquals(e.error, "bad_request", "should return bad_request");
+    TEquals(e.reason, "Attachment name can't be empty",
+        "should state that attachment name can't be empty");
+  }
 
   // standalone docs
   var bin_data = "JHAPDO*AU£PN ){(3u[d 93DQ9¡€])}    ææøo'∂ƒæ≤çæππ•¥∫¶®#†π¶®¥π€ª®˙π8np";
