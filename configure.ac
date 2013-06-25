@@ -409,7 +409,7 @@ esac
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking Erlang version compatibility" >&5
 $as_echo_n "checking Erlang version compatibility... " >&6; }
-erlang_version_error="The installed Erlang version must be >= R13B04 (erts-5.7.4) and < R16A (erts-5.10)"
+erlang_version_error="The installed Erlang version must be >= R13B04 (erts-5.7.4) and < R17 (erts-5.11)"
 
 version="`${ERL} -version 2>&1 | ${SED} 's/[[^0-9]]/ /g'` 0 0 0"
 major_version=`echo $version | ${AWK} "{print \\$1}"`
@@ -420,7 +420,7 @@ if test $major_version -ne 5; then
     as_fn_error $? "$erlang_version_error" "$LINENO" 5
 fi
 
-if test $minor_version -lt 7 -o $minor_version -gt 9; then
+if test $minor_version -lt 7 -o $minor_version -gt 10; then
     as_fn_error $? "$erlang_version_error" "$LINENO" 5
 fi
 

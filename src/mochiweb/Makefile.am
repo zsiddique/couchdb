@@ -17,6 +17,7 @@ endif
 mochiwebebindir = $(localerlanglibdir)/mochiweb-1.4.1/ebin
 
 mochiweb_file_collection = \
+	pmod_pt.erl \
 	mochifmt.erl \
 	mochifmt_records.erl \
 	mochifmt_std.erl \
@@ -55,6 +56,7 @@ mochiweb_file_collection = \
 	reloader.erl
 
 mochiwebebin_make_generated_file_list = \
+	pmod_pt.beam \
 	mochifmt.beam \
 	mochifmt_records.beam \
 	mochifmt_std.beam \
@@ -106,5 +108,7 @@ CLEANFILES = \
 mochijson2.beam: mochijson2.erl
 	$(ERLC) $(ERLC_FLAGS) $(MOCHIJSON_ERLC_FLAGS) $<
 
+mochifmt_records.beam mochifmt_std.beam mochiweb_request.beam mochiweb_response.beam: pmod_pt.beam
+
 %.beam: %.erl
-	$(ERLC) $(ERLC_FLAGS) $<
+	$(ERLC) $(ERLC_FLAGS) -pa . $<

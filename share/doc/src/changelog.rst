@@ -43,6 +43,19 @@ CouchDB 1.0.x release.
    CouchDB 1.0.x you must back up your data files before performing the
    upgrade and compaction process.
 
+Version 1.3.2
+-------------
+
+This version has not been released yet.
+
+Build System
+^^^^^^^^^^^^
+
+* :issue:`1696`: Add support for Erlang R16B through pmod-transform library.
+  :commit:`50e5b1e`
+* :issue:`1833`: Support Erlang R16B01.
+  :commit:`01afaa4f`
+
 Version 1.3.1
 -------------
 
@@ -69,7 +82,7 @@ Miscellaneous
 
 * Improve documentation: better structure, improve language, less duplication.
 * :issue:`1784`: Improvements to test suite and VPATH build system.
-  :commit:`01afaa4f`
+* Improvements to test suite.
 
 Version 1.3.0
 -------------
