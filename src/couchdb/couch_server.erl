@@ -152,7 +152,7 @@ init([]) ->
 
     RootDir = couch_config:get("couchdb", "database_dir", "."),
     MaxDbsOpen = list_to_integer(
-            couch_config:get("couchdb", "max_dbs_open")),
+            couch_config:get("couchdb", "max_dbs_open", "100")),
     Self = self(),
     ok = couch_config:register(
         fun("couchdb", "database_dir") ->
