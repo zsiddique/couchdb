@@ -58,9 +58,10 @@ test() ->
 
     CheckDefaults = fun() ->
         etap:is(
-            couch_config:get("couchdb", "max_dbs_open"),
-            "100",
-            "{couchdb, max_dbs_open} is 100 by defualt."
+            couch_config:get("couchdb", "delayed_commits"),
+            "true",
+            "{couchdb, delayed_commits} is true by default."
+            %% actually it should be false by default, but this is another story
         ),
 
         etap:is(
@@ -83,9 +84,9 @@ test() ->
 
     CheckOverride = fun() ->
         etap:is(
-            couch_config:get("couchdb", "max_dbs_open"),
-            "10",
-            "{couchdb, max_dbs_open} was overriden with the value 10"
+            couch_config:get("couchdb", "delayed_commits"),
+            "false",
+            "{couchdb, delayed_commits} was overridden with the value false"
         ),
 
         etap:is(
