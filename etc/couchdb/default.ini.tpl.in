@@ -299,6 +299,9 @@ authentication_redirect = /_utils/session.html
 ;
 ;require_valid_user = false
 
+; Authentication secret. Sets automatically on first auth if was unset.
+secret =
+
 ; Number of seconds since the last request before session will be expired.
 timeout = 600
 
