@@ -144,7 +144,7 @@ _add_config_dir () {
 _load_config () {
     _add_config_file "$DEFAULT_CONFIG_FILE"
     _add_config_dir "$DEFAULT_CONFIG_DIR"
-    if [test -r "$LOCAL_CONFIG_FILE" ]; then
+    if [ -r "$LOCAL_CONFIG_FILE" ]; then
       _add_config_file "$LOCAL_CONFIG_FILE"
     fi
     _add_config_dir "$LOCAL_CONFIG_DIR"
