@@ -14,7 +14,7 @@ couchprivlibdir = $(localerlanglibdir)/couch-$(version)/priv/lib
 devcouchprivlibdir = $(abs_top_builddir)/src/couchdb/priv/.libs
 
 localconf_DATA = default.ini
-noinst_DATA = default_dev.ini
+noinst_DATA = default_dev.ini local_dev.ini
 
 CLEANFILES = $(localconf_DATA) $(noinst_DATA)
 
@@ -65,6 +65,14 @@ default_dev.ini: default.ini.tpl
 	    -e "s|%package_author_name%|$(package_author_name)|g" \
 	    -e "s|%version%|$(version)|g" \
 	< $< > $@
+
+# Noah said to not specify local.ini but it borks
+# VPATH builds that make distcheck uses.
+local_dev.ini:
+	if test ! -f "$@"; then \
+	    touch $@; \
+	    chmod +w $@; \
+	fi
 
 install-data-hook:
 	if test ! "$(mkdir_p)" = ""; then \
