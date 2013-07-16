@@ -103,7 +103,7 @@ function(app, FauxtonAPI, Documents, Databases) {
     events: {
       "route:updateAllDocs": "updateAllDocsFromView",
       "route:updatePreviewDocs": "updateAllDocsFromPreview",
-      "route:reloadDesignDocs": "reloadDesignDocs"
+      "route:reloadDesignDocs": "reloadDesignDocs",
     },
 
     initialize: function (route, masterLayout, options) {

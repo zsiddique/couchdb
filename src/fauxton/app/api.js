@@ -225,6 +225,44 @@ function(app, Fauxton) {
     this.addEvents();
   };
 
+  var broadcaster = {};
+  _.extend(broadcaster, Backbone.Events);
+
+  FauxtonAPI.RouteObject.on = function (eventName, fn) {
+    broadcaster.on(eventName, fn); 
+  };
+  
+  /* How Route Object events work
+   To listen to a specific route objects events:
+
+   myRouteObject = FauxtonAPI.RouteObject.extend({
+    events: {
+      "beforeRender": "beforeRenderEvent"
+    },
+
+    beforeRenderEvent: function (view, selector) {
+      console.log('Hey, beforeRenderEvent triggered',arguments);
+
+    },
+   });
+
+    It is also possible to listen to events triggered from all Routeobjects. 
+    This is great for more general things like adding loaders, hooks.
+
+    app.RouteObject.on('beforeRender', function (routeObject, view, selector) {
+      console.log('hey, this will trigger when any routeobject renders a view');
+    });
+
+   Current Events to subscribe to:
+    * beforeFullRender -- before a full render is being done
+    * beforeEstablish -- before the routeobject calls establish
+    * AfterEstablish -- after the routeobject has run establish
+    * beforeRender -- before a view is rendered
+    * afterRender -- a view is finished being rendered
+    * renderComplete -- all rendering is complete
+    
+  */
+
   // Piggy-back on Backbone's self-propagating extend function
   FauxtonAPI.RouteObject.extend = Backbone.Model.extend;
 
@@ -250,14 +288,13 @@ function(app, Fauxton) {
     renderWith: function(route, masterLayout, args) {
       var routeObject = this;
 
-      // TODO: Can look at replacing this with events eg beforeRender, afterRender function and events
-      this.route.call(this, route, args);
-
       // Only want to redo the template if its a full render
       if (!this.renderedState) {
-        masterLayout.setTemplate(this.layout);
-          $('#nav-links li').removeClass('active');
+        this.triggerBroadcast('beforeFullRender');
 
+        masterLayout.setTemplate(this.layout);
+
+        $('#nav-links li').removeClass('active');
         if (this.selectedHeader) {
           $('#nav-links li[data-nav-name="' + this.selectedHeader + '"]').addClass('active');
         }
@@ -277,24 +314,31 @@ function(app, Fauxton) {
         }));
       }
 
+      this.triggerBroadcast('beforeEstablish');
       FauxtonAPI.when(this.establish()).done(function(resp) {
         if (!this.disableLoader) {
           $('#app-container').removeClass(this.loaderClassname);
         }
+        this.triggerBroadcast('afterEstablish');
         _.each(routeObject.getViews(), function(view, selector) {
           if(view.hasRendered()) { return; }
+
+          this.triggerBroadcast('beforeRender', view, selector);
+
           if (!view.disableLoader){ $(selector).addClass(view.loaderClassname);}
+
           masterLayout.setView(selector, view);
           FauxtonAPI.when(view.establish()).then(function(resp) {
             if (!view.disableLoader) $(selector).removeClass(view.loaderClassname);
             masterLayout.renderView(selector);
-            }, function(resp) {
+          }, function(resp) {
             view.establishError = {
               error: true,
               reason: resp
             };
             masterLayout.renderView(selector);
-          });
+            this.triggerBroadcast('afterRender', view, selector);
+          }.bind(this));
 
           var hooks = masterLayout.hooks[selector];
           var boundRoute = route;
@@ -303,14 +347,23 @@ function(app, Fauxton) {
             if (_.any(hook.routes, function(route){return route == boundRoute;})){
               hook.callback(view);
             }
-          });
-        });
+          }, this);
+        }, this);
       }.bind(this));
 
       if (this.get('apiUrl')) masterLayout.apiBar.update(this.get('apiUrl'));
 
       // Track that we've done a full initial render
       this.renderedState = true;
+      this.triggerBroadcast('renderComplete');
+    },
+
+    triggerBroadcast: function (eventName) {
+      var args = Array.prototype.slice.call(arguments);
+      this.trigger.apply(this, args);
+
+      args.splice(0,1, eventName + ':all', this);
+      broadcaster.trigger.apply(broadcaster, args);
     },
 
     get: function(key) {
