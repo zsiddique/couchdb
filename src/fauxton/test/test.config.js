@@ -58,6 +58,8 @@ require.config(
 
 require([
         
+           '.././test/core/routeObjectSpec.js',
+        
            '.././app/addons/logs/tests/logSpec.js',
         
 ], function() {

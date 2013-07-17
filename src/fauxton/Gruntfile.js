@@ -119,7 +119,7 @@ module.exports = function(grunt) {
     // https://github.com/cowboy/grunt/blob/master/docs/task_lint.md
     lint: {
       files: [
-        "build/config.js", "app/**/*.js"
+        "build/config.js", "app/**/*.js" 
       ]
     },
 
@@ -136,7 +136,7 @@ module.exports = function(grunt) {
     // override inside main.js needs to test for them so as to not accidentally
     // route.
     jshint: {
-      all: ['app/**/*.js', 'Gruntfile.js'],
+      all: ['app/**/*.js', 'Gruntfile.js', "test/core/*.js"],
       options: {
         scripturl: true,
         evil: true
@@ -302,7 +302,7 @@ module.exports = function(grunt) {
 
     mochaSetup: {
       default: {
-        files: { src: helper.watchFiles(['[Ss]pec.js'], ['./app/**/*[Ss]pec.js'])},
+        files: { src: helper.watchFiles(['[Ss]pec.js'], ['./test/core/**/*[Ss]pec.js', './app/**/*[Ss]pec.js'])},
         template: 'test/test.config.underscore',
         config: './app/config.js'
       }
