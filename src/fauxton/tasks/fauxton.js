@@ -89,4 +89,27 @@ module.exports = function(grunt) {
     grunt.file.write(dest, tmpl({deps: deps}));
   });
 
+  grunt.registerMultiTask('mochaSetup','Generate a config.js and runner.html for tests', function(){
+    var data = this.data,
+        configInfo,
+        _ = grunt.util._,
+        configTemplateSrc = data.template,
+        testFiles = grunt.file.expand(data.files.src);
+
+    var configTemplate = _.template(grunt.file.read(configTemplateSrc));
+    // a bit of a nasty hack to read our current config.js and get the info so we can change it 
+    // for our testing setup
+    var require = {
+      config: function (args) {
+        configInfo = args;
+        configInfo.paths['chai'] = "../test/mocha/chai";
+        configInfo.baseUrl = '../app';
+        delete configInfo.deps;
+      }
+    };
+
+    eval(grunt.file.read(data.config) +'');
+
+    grunt.file.write('./test/test.config.js', configTemplate({configInfo: configInfo, testFiles: testFiles}));
+  });
 };
