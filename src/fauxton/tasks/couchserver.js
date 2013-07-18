@@ -49,7 +49,7 @@ module.exports = function (grunt) {
       if (!!url.match(/assets/)) {
         // serve any javascript or css files from here assets dir
         filePath = path.join('./',url);
-      } else if (!!url.match(/mocha|test\.config/)) {
+      } else if (!!url.match(/mocha|\/test\/core\/|test\.config/)) {
         filePath = path.join('./test', url.replace('/test/',''));
       } else if (!!url.match(/\.css|img/)) {
         filePath = path.join(dist_dir,url);

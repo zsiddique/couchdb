@@ -4,13 +4,7 @@ define([
 ], function (Log, chai) {
   var expect = chai.expect;
 
-  describe('Example AMD test', function(){
-
-    describe('Sum', function(){
-      it('Should add two numbers together', function(){
-        expect(10 + 2).to.equal(12);
-      });
-    });
+  describe('Logs Addon', function(){
 
     describe('Log Model', function () {
       var log;

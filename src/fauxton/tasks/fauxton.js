@@ -103,6 +103,8 @@ module.exports = function(grunt) {
       config: function (args) {
         configInfo = args;
         configInfo.paths['chai'] = "../test/mocha/chai";
+        configInfo.paths['sinon-chai'] = "../test/mocha/sinon-chai";
+        configInfo.paths['testUtils'] = "../test/mocha/testUtils";
         configInfo.baseUrl = '../app';
         delete configInfo.deps;
       }

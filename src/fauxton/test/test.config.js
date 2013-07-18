@@ -13,7 +13,9 @@ require.config(
 		"jshint": "../assets/js/libs/jshint",
 		"d3": "../assets/js/libs/d3",
 		"nv.d3": "../assets/js/libs/nv.d3",
-		"chai": "../test/mocha/chai"
+		"chai": "../test/mocha/chai",
+		"sinon-chai": "../test/mocha/sinon-chai",
+		"testUtils": "../test/mocha/testUtils"
 	},
 	"baseUrl": "../app",
 	"shim": {

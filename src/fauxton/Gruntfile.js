@@ -218,7 +218,7 @@ module.exports = function(grunt) {
 
     watch: {
       js: { 
-        files: helper.watchFiles(['.js'], ["./app/**/*.js", '!./app/load_addons.js',"./assets/**/*.js"]),
+        files: helper.watchFiles(['.js'], ["./app/**/*.js", '!./app/load_addons.js',"./assets/**/*.js", "./test/**/*.js"]),
         tasks: ['watchRun'],
       },
       style: {
@@ -318,6 +318,11 @@ module.exports = function(grunt) {
   grunt.event.on('watch', function(action, filepath) {
     if (!!filepath.match(/.js$/)) {
       grunt.config(['jshint', 'all'], filepath);
+    }
+
+    console.log(filepath);
+    if (!!filepath.match(/[Ss]pec.js$/)) {
+      grunt.task.run(['mochaSetup','mocha_phantomjs']);
     }
   });
 
