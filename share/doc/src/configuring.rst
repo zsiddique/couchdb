@@ -31,11 +31,13 @@ order.
 
 1. ``PREFIX/default.ini``
 
-2. ``PREFIX/default.d/*``
+2. ``PREFIX/default.d/*.ini``
 
-3. ``PREFIX/local.ini``
+3. ``PLUGINS_DIR/*/priv/default.d/*.ini``
 
-4. ``PREFIX/local.d/*``
+4. ``PREFIX/local.ini``
+
+5. ``PREFIX/local.d/*.ini``
 
 Settings in successive documents override the settings in earlier
 entries. For example, setting the ``bind_address`` parameter in
@@ -45,6 +47,8 @@ entries. For example, setting the ``bind_address`` parameter in
    The ``default.ini`` file may be overwritten during an upgrade or
    re-installation, so localised changes should be made to the
    ``local.ini`` file or files within the ``local.d`` directory.
+   When a plugin is installed at runtime, its configuration will be
+   loaded as-is, possibly overriding local configuration.
 
 .. _update-notifications:
 
